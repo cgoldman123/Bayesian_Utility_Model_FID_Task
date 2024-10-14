@@ -18,10 +18,11 @@ for i = 1:length(subfolders)
     % Get the subject folder name (e.g., 'sub-BC553')
     subject_folder = subfolders(i).name;
     subdat.subject = strrep(subject_folder, 'sub-', '');
-    % flag for valid subject data
-    valid_task_run = 1;
+
     % Loop through both ses-v1 and ses-v2 folders
     for ses = {'ses-v1', 'ses-v2'}
+        % flag for valid subject data
+        valid_task_run = 1;
         func_folder = fullfile(base_dir, subject_folder, ses{1}, 'func');
         if ~isfolder(func_folder)
             continue;
@@ -67,6 +68,11 @@ for i = 1:length(subfolders)
         % 2 = 1 reward, 2 shock
         % 3 = 2 reward, 1 shock
         % 4 = 2 reward, 2 shock
+        
+        % "The runway has a total length of 90 units, where the
+        % participant’s figure is placed 10 units to the safety exit." I
+        % will therefore subtract from 80 the values in the table showing
+        % how far the predator traveled to get relative distances
         num_trials = 120;
         trial_data = zeros(num_trials, 6); % Preallocate for trial, trial_type, FID, AD, reward_level, shock_level
         for trial = 0:num_trials-1
@@ -75,7 +81,7 @@ for i = 1:length(subfolders)
             % flight initiation
             flight_initiation_idx = find(trial_rows.event_code == 10);
             if ~isempty(flight_initiation_idx)
-                FID = trial_rows(flight_initiation_idx - 1,:).result;
+                FID = 80 - trial_rows(flight_initiation_idx - 1,:).result;
             else
                 FID = 0;
             end
@@ -83,7 +89,7 @@ for i = 1:length(subfolders)
             % attack distance
             attack_initiation_idx = find(trial_rows.event_code == 11);
             if ~isempty(attack_initiation_idx)
-                AD = trial_rows(attack_initiation_idx,:).result;
+                AD = 80 - trial_rows(attack_initiation_idx,:).result;
             else
                 error("I think there should always be an attack distance");
             end
@@ -112,13 +118,25 @@ for i = 1:length(subfolders)
              % Store the results for the current trial
             trial_data(trial + 1, :) = [trial+1, trial_type, FID, AD, reward_level, shock_level];
         end
-        trial_table = array2table(trial_data, 'VariableNames', {'Trial', 'TrialType', 'FID', 'AD', 'RewardLevel', 'ShockLevel'});
+        trial_table = array2table(trial_data, 'VariableNames', {'Trial', 'PredatorSpeed', 'FID', 'AD', 'RewardLevel', 'ShockLevel'});
         trial_table.subject = repmat([subdat.subject '_' ses{1}], num_trials, 1);  % Assuming subject_id is a constant for all trials
         % Append the trial_table to the all_data table
         all_data = [all_data; trial_table];  % Accumulate all data
     end
 end
 
+% remove Maria's data
+all_data.subject = cellstr(all_data.subject); % Convert character array to cell array of strings
+all_data(contains(all_data.subject, 'MI999'), :) = []; % Now this should work
+
+% note that BV156 had no events file for Ses-V1 but had physio files
+% BW460 and AA374 had only 3 out of 4 parts for Ses-V2
+
 % to look at unique strings
 % unique(string(all_data.subject))
+
+
+% save results
+%writetable(all_data, 'L:\rsmith\lab-members\cgoldman\ironside_FID\LIBR_FID_scripts_CMG\data\expanded_data_LIBR.csv');
+
 end

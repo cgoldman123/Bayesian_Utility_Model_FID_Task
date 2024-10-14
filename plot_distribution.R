@@ -29,7 +29,7 @@ p.escape.by.FID.DT[, trial.within.color := as.factor(trial.within.color)]
 fig <- ggplot(p.escape.by.FID.DT[trial.within.color %in% c("1", "5", "10", "15", "20")],
               aes(x = FID, y = p.escape, color = color)) +
     geom_line(size = 0.8, aes(alpha = trial.within.color)) +
-   scale_colour_manual(values = c("dodgerblue2","orange", "red")) +
+   scale_colour_manual(values = c("dodgerblue2", "red")) +
     facet_wrap(~ color, scales = "free_y", ncol=1) +
     ylab("probability of escape") +
     ggtitle("Estimated probability of escape under various FID") +
