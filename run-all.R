@@ -1,5 +1,7 @@
+rm(list = ls())
+setwd("L://rsmith//lab-members//cgoldman//ironside_FID//LIBR_FID_scripts_CMG")
+
 source("analysis.R")
-source("plot_distribution.R")
 source("reward_function.R")
 source("models.R")
 source("bayesian_utilities.R")

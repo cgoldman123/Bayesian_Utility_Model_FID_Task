@@ -5,21 +5,44 @@ library(data.table)
 library(plyr)
 library(gridExtra)
 
-rm(list = ls())
 # read data
 setwd("L://rsmith//lab-members//cgoldman//ironside_FID//LIBR_FID_scripts_CMG")
 # data.DT <- data.table(read.csv("data/data.csv"))
 data.DT <- data.table(read.csv("data/expanded_data_LIBR.csv"))
 data.DT$subject_id = data.DT$subject
-data.DT$subject <- as.numeric(factor(data.DT$subject_id))
+data.DT$subject <- as.factor(as.numeric(factor(data.DT$subject_id)))
 # Create a mapping of subject IDs to numeric values
 subject_mapping <- unique(data.DT[, .(subject, subject_id)])
 data.DT$color = data.DT$PredatorSpeed
 data.DT[, color := factor(c("slow", "fast")[color],
                              levels = c("slow", "fast"))]
 data.DT$reward.level = data.DT$RewardLevel
+# round FID to nearest integer
+data.DT$FID = round(data.DT$FID) # necessary for plots; perhaps we don't want to lose this info for analysis
+
+# Even subject IDs received the "right" distribution of attack speeds and rewards for v1, but the "left" distribution for v2 (see Rayus' readme for explanation)
+data.DT <- data.DT %>%
+  mutate(
+    # Extract the numeric part of the subject_id
+    numeric_id = as.numeric(substring(subject_id, 3, 5)),
+    # Extract the session version (1 or 2)
+    session = sub(".*_ses-v", "", subject_id),
+    # Apply the logic to create the distribution column
+    distribution = dplyr::case_when(
+      numeric_id %% 2 == 0 & session == "1" ~ "right",
+      numeric_id %% 2 == 0 & session == "2" ~ "left",
+      numeric_id %% 2 == 1 & session == "1" ~ "left",
+      numeric_id %% 2 == 1 & session == "2" ~ "right"
+    )
+  ) %>%
+  dplyr::select(-numeric_id, -session)  # Optionally remove the helper columns
+
+
+
+
 data.DT <- data.DT[FID > 0, ]  # discard those FID <= 0
 data.DT$trial = data.DT$Trial
+data.DT$shock.level = data.DT$ShockLevel
 setkey(data.DT, subject, trial, color)
 
 # plot

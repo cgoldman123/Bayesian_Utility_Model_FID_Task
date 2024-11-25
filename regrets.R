@@ -47,7 +47,7 @@ print(regrets.DT)
     geom_line(aes(y = FID.optimal, color = color), size = 1) +
     geom_point(aes(y = FID, color = color), shape = 1) +
     geom_text(aes(label = display), x = 50, y = 10, size = 3, data = regrets.DT) +
-    scale_colour_manual(values = c("dodgerblue2","orange", "red")) + 
+    scale_colour_manual(values = c("dodgerblue2", "red")) + 
     facet_wrap(~ subject) +
     ggtitle(paste("Retracing by subjects with choice model coefficients:",
                   "FID (dot) and its optimal alternative (line)", sep = "\n"))
@@ -59,8 +59,9 @@ print(regrets.DT)
         geom_line(aes(y = total.util.optimal, color = color), size = 0.7) +
         geom_point(aes(y = total.util, color = color), shape = 1) +
         geom_text(aes(label = display), x = 50, y = -5, size = 3, data = regrets.DT) +
-        scale_colour_manual(values = c("dodgerblue2","orange", "red")) + 
+        scale_colour_manual(values = c("dodgerblue2", "red")) + 
         facet_wrap(~ subject) +
         ggtitle(paste("Retracing by subjects with choice model coefficients:",
                       "Actual utility (dot) and its optimal alternative (line)", sep = "\n"))
 } %>% print
+
