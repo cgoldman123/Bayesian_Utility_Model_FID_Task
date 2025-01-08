@@ -22,8 +22,8 @@ Util.Money <- function(.P.Escape, .Money) {
 }
 
 
-
-.MakeUtilityTable <- function(distribution, .color, AD, trial, FID.choices, .Money) {
+## CMG: I took away the .money argument because we assign the .money within the function
+.MakeUtilityTable <- function(distribution, .color, AD, trial, FID.choices) {
     stopifnot(!is.unsorted(trial), length(trial) == length(AD))
     # a new object
     # TODO: use estimate of sigma here. replace with known variance^(1/2)
@@ -37,7 +37,7 @@ Util.Money <- function(.P.Escape, .Money) {
         # print(paste("Index:", i, "Color:", .color, "Distribution:", distribution[i]))
       
         # estimate utility
-        # carter added since money depends on predator (fast/slow) and distribution (left/right)
+        # CMG added since money depends on predator (fast/slow) and distribution (left/right)
         if (.color == "fast" & distribution[i] == "left") {
           .Money <- Money.Exponential.Fast.Left
         } else if (.color == "fast" & distribution[i] == "right") {
@@ -70,12 +70,11 @@ Util.Money <- function(.P.Escape, .Money) {
 
 bayesian.utility.DT <- data.DT[subject == "22",
                            as.list(.MakeUtilityTable(distribution, color, AD, trial,
-                                                         FID.choices,
-                                                         Money.Linear)),
+                                                         FID.choices)),
                                by = color]
 
 
-## CMG: instead of using one subjects utility estimations (bayesian.utility.DT), use the optimal bayesian utility for each subject
+## CMG: instead of using one subjects utility estimations (bayesian.utility.DT), calculate the utility for each subject
 # given what that particular subject saw ---> Big.bayesian.utility.DT
 Big.bayesian.utility.DT <- list()
 subjects = levels(as.factor(data.DT$subject))
@@ -85,8 +84,7 @@ for (i in 1:length(subjects)) {
   # Call the function for each subject and store the result in a temporary variable
   temp_result <- data.DT[subject == subjects[i],
                          as.list(.MakeUtilityTable(distribution, color, AD, trial,
-                                                   FID.choices,
-                                                   Money.Linear)),
+                                                   FID.choices)),
                          by = color]
   # Add the subject variable to the temporary result
   temp_result[, subject := subjects[i]]

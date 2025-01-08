@@ -5,7 +5,7 @@ library(mlogit) # note that an older version of mlogit must be used; remotes::in
 
 # choices.data.DT <- merge(data.DT[FID>0], bayesian.utility.DT)
 
-## CMG: instead of using one subjects utility estimations, use the optimal bayesian utility for each subject
+## CMG: instead of using one subjects utility estimations, use the bayesian utility for each subject
 # given what that particular subject saw ---> Big.bayesian.utility.DT
 choices.data.DT <- merge(data.DT[FID>0], Big.bayesian.utility.DT)
 
@@ -25,10 +25,11 @@ subjects <- levels(as.factor(choices.data.DT$subject))
 # subjects <- levels((choices.data.DT$subject))
 
 # Estimate ~~~~~
-# note that the multinomial logit model seeks to maximize the probability assigned to
-# the FID that the participant chose on a given trial. It fits two parameters, pain and money, that both multiply
-# against the utility of pain or money for each FID, where those utilities are the input to the model. The model assigns
-# a probability of choosing an FID based on a softmax of the "value" of that FID compared to others
+# We use a multinomial logit model that seeks to maximize the probability assigned to the FID 
+# that the participant chose on a given trial. It fits two parameters, pain and money, that 
+# multiply the utility of pain or money for each FID (previously determined by the predicted 
+# attack distance → probability of escape for each FID → utility for each FID). 
+# The model uses a softmax rule to compare FID choices. 
 # e.g
 # Value of FID 1 = money*bayesian_utility_money_FID_1 + pain*bayesian_utility_pain_FID_1 
 # Value of FID 2 = money*bayesian_utility_money_FID_2 + pain*bayesian_utility_pain_FID_2
