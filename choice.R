@@ -11,7 +11,7 @@ choices.data.DT <- merge(data.DT[FID>0], Big.bayesian.utility.DT)
 
 
 
-# let util. <- util. x levels
+# let util. <- util. x levels (E.g., sometimes shock level is 2 and other times it is 0. There are also different reward levels)
 for (col in grep("pain\\.", colnames(choices.data.DT))) {
     set(choices.data.DT, i=NULL, col,
         choices.data.DT$shock.level * choices.data.DT[, col, with=F])

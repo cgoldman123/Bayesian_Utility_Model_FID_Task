@@ -98,6 +98,8 @@ setkey(Big.bayesian.utility.DT, subject, trial, color)
 
 
 
+
+## Plot estimated expected reward and pain for one person
 setkey(bayesian.utility.DT, trial, color)
 
 util.money.DT <- bayesian.utility.DT[, grep("money.",

@@ -11,11 +11,11 @@ source("regrets.R")
 getwd()
 # setwd("/Users/songqi/Downloads/kat-risk-estimate-master 2")
 
-# outliner = 17,20,28.
+
+
 # correlation between anxiety level and modelling parameters.
-# all.anxiety <- dplyr::filter(subject_anxiety_2016,sub!=17 & sub!=20 & sub!=28)
-all.coeff <- dplyr::filter(choice.coeff.DT,subject!=17 & subject!=20 & subject!=28)
-all.regret <- dplyr::filter(regrets.DT,subject!=17 & subject!=20 & subject!=28)
+all.coeff <- choice.coeff.DT
+all.regret <- regrets.DT
 # 
 # cor.test(all.anxiety$anxiety,all.coeff$pain)
 # cor.test(all.anxiety$anxiety,all.coeff$money)
@@ -45,9 +45,9 @@ all.regret <- dplyr::filter(regrets.DT,subject!=17 & subject!=20 & subject!=28)
 
 all.utility <- bayesian.retrace.DT %>%
   dplyr::group_by(subject) %>%
-  summarize(utilityx = mean(total.util))
+  dplyr::summarize(utilityx = mean(total.util, na.rm = TRUE), .groups = "drop")
 
-all.utility <- dplyr::filter(all.utility,subject!=17 & subject!=20 & subject!=28)
+# Correlation between anxiety level and utility received
 # cor.test(all.anxiety$anxiety,all.utility$utilityx)
 
 # re-test correlation between anxiety and FID
@@ -56,12 +56,12 @@ df_far <- filter(df_now,color==1) %>%
   group_by(subject) %>%
   summarize(flightx = mean(flight))
 
-cor.test(subject_anxiety_2016$anxiety,df_far$flightx)
+# cor.test(subject_anxiety_2016$anxiety,df_far$flightx)
 
 df_mid <- filter(df_now,color==2) %>%
   group_by(subject) %>%
   summarize(flightx = mean(flight))
-cor.test(subject_anxiety_2016$anxiety,df_mid$flightx)
+# cor.test(subject_anxiety_2016$anxiety,df_mid$flightx)
 
 
 df_close <- filter(df_now,color==3) %>%

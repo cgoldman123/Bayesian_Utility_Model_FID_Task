@@ -71,13 +71,15 @@ V.predator.slow <- 26/7
 V.subject.run <- 1
 L <- 5
 
+# Remember the FID has to be greater than the attack distance since the 
+# predator moves faster than we do. The constants a and b account for this difference.
 a <- V.predator.fast / (V.predator.fast - V.predator.slow)
 b <- L * a * (1 - V.predator.slow / V.subject.run)
 
 # Bayesian player model
-likelihood.sigma.x <- 5.2
-prior.mean.mu <- 50
-prior.sd.mu <- 30
+likelihood.sigma.x <- 5.2 # standard deviation of observations
+prior.mean.mu <- 50 # prior mean for attack distance
+prior.sd.mu <- 30 # prior standard deviation for attack distance
 
 # sequentially process trials for each (subject, color)
 
@@ -147,4 +149,6 @@ fig <- ggplot(results.DT, aes(x = p.escape, y = FID, color = color)) +
     ggtitle("FID ~ p(escape | FID) by subject")
 print(fig)
 
+# Get the estimated probability of escape under various FID based on a person's estimate
+# of the attack distance
 source("plot_distribution.R")
