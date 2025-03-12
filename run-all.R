@@ -12,11 +12,49 @@ getwd()
 # setwd("/Users/songqi/Downloads/kat-risk-estimate-master 2")
 
 
+# Merge the dataframes
+merged_data <- merge(choice.coeff.DT, regrets.DT, by = "subject")
+merged_data <- merge(merged_data, subject_mapping, by = "subject")
+
+# Extract id and session
+merged_data$id <- substr(merged_data$subject_id, 1, 5)
+merged_data$session <- as.numeric(substr(merged_data$subject_id, 12, 12))
+
+# Don't move these libraries to the top of the file
+library(tidyr)
+library(dplyr)
+
+# Pivot the data so each subject (id) has one row, with session-specific columns
+wide_data <- merged_data %>%
+  select(c(id, session, regret, pain, money, money.per.pain)) %>%  # Ensure only relevant columns are included
+  distinct() %>%  # Remove duplicates if necessary
+  pivot_wider(
+    names_from = session, 
+    values_from = c(regret, pain, money, money.per.pain),
+    names_glue = "{.value}_session_{session}"
+  )
+
+colSums(!is.na(wide_data[, c("pain_session_1", "pain_session_2")]))
+wide_data %>% filter(!is.na(pain_session_1) & !is.na(pain_session_2)) %>% summarise(n = n())
+
+
+library(lme4)
+library(performance)
+
+# Fit a linear mixed model with pain as the dependent variable and subject ID as a random effect
+lmm_model <- lmer(pain ~ (1 | id), data = merged_data, REML = TRUE)
+
+# Compute ICC
+icc_result <- icc(lmm_model)
+summary(icc_result)
+
+library(irr)
+icc_result <- irr::icc(wide_data[, c("pain_session_1", "pain_session_2")], model = "twoway", type = "consistency", unit = "single")
+print(icc_result)
+
 
 # correlation between anxiety level and modelling parameters.
-all.coeff <- choice.coeff.DT
-all.regret <- regrets.DT
-# 
+
 # cor.test(all.anxiety$anxiety,all.coeff$pain)
 # cor.test(all.anxiety$anxiety,all.coeff$money)
 # cor.test(all.anxiety$anxiety,all.coeff$money.per.pain)

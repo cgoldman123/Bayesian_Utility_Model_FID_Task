@@ -17,7 +17,9 @@
 }
 
 FID.vec <- 0:80
-p.escape.by.FID.DT <- data.DT[subject=="1",
+
+## LEFT Distribution
+p.escape.by.FID.DT <- data.DT[numeric_id=="202"& distribution=="left",
                               .SequentialEstimateProb(FID.vec, AD),
                               by = color]
 p.escape.by.FID.DT <- melt(p.escape.by.FID.DT,
@@ -32,7 +34,26 @@ fig <- ggplot(p.escape.by.FID.DT[trial.within.color %in% c("1", "5", "10", "15",
    scale_colour_manual(values = c("dodgerblue2", "red")) +
     facet_wrap(~ color, scales = "free_y", ncol=1) +
     ylab("probability of escape") +
-    ggtitle("Estimated probability of escape under various FID") +
+    ggtitle("Estimated probability of escape under various FID for left distribution") +
    theme_bw()
 print(fig)
 
+## RIGHT Distribution
+p.escape.by.FID.DT <- data.DT[numeric_id=="202" & distribution=="right",
+                              .SequentialEstimateProb(FID.vec, AD),
+                              by = color]
+p.escape.by.FID.DT <- melt(p.escape.by.FID.DT,
+                           id.vars = c("color", "trial.within.color"),
+                           value.name = "p.escape")
+p.escape.by.FID.DT[, FID := FID.vec[as.factor(variable)]]
+p.escape.by.FID.DT[, trial.within.color := as.factor(trial.within.color)]
+
+fig <- ggplot(p.escape.by.FID.DT[trial.within.color %in% c("1", "5", "10", "15", "20")],
+              aes(x = FID, y = p.escape, color = color)) +
+  geom_line(size = 0.8, aes(alpha = trial.within.color)) +
+  scale_colour_manual(values = c("dodgerblue2", "red")) +
+  facet_wrap(~ color, scales = "free_y", ncol=1) +
+  ylab("probability of escape") +
+  ggtitle("Estimated probability of escape under various FID for right distribution") +
+  theme_bw()
+print(fig)
