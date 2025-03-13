@@ -19,6 +19,7 @@ merged_data <- merge(merged_data, subject_mapping, by = "subject")
 # Extract id and session
 merged_data$id <- substr(merged_data$subject_id, 1, 5)
 merged_data$session <- as.numeric(substr(merged_data$subject_id, 12, 12))
+merged_data$run <- (substr(merged_data$subject_id, 18, 20))
 
 # Don't move these libraries to the top of the file
 library(tidyr)
@@ -26,31 +27,76 @@ library(dplyr)
 
 # Pivot the data so each subject (id) has one row, with session-specific columns
 wide_data <- merged_data %>%
-  select(c(id, session, regret, pain, money, money.per.pain)) %>%  # Ensure only relevant columns are included
+  select(c(id, session, run, regret, pain, money, money.per.pain)) %>%  # Ensure only relevant columns are included
   distinct() %>%  # Remove duplicates if necessary
   pivot_wider(
-    names_from = session, 
+    names_from = c(session,run),
     values_from = c(regret, pain, money, money.per.pain),
-    names_glue = "{.value}_session_{session}"
+    names_glue = "{.value}_session_{session}_run_{run}"
   )
 
-colSums(!is.na(wide_data[, c("pain_session_1", "pain_session_2")]))
-wide_data %>% filter(!is.na(pain_session_1) & !is.na(pain_session_2)) %>% summarise(n = n())
 
 
+# Identify the number of subjects who completed session 1 but not session 2
+wide_data %>% filter(!is.na(pain_session_1_run_1_2) & !is.na(pain_session_1_run_3_4) & (is.na(pain_session_2_run_1_2) | is.na(pain_session_2_run_3_4))) %>% summarise(n = n())
+wide_data %>% filter(!is.na(pain_session_1_run_1_2) & !is.na(pain_session_1_run_3_4) & (is.na(pain_session_2_run_1_2) | is.na(pain_session_2_run_3_4))) %>% pull(id)
+# Identify the number of subjects who completed session 2 but not session 1
+# BV156 has bold files but not events file
+wide_data %>% filter(!is.na(pain_session_2_run_1_2) & !is.na(pain_session_2_run_3_4) & (is.na(pain_session_1_run_1_2) | is.na(pain_session_1_run_3_4))) %>% summarise(n = n())
+wide_data %>% filter(!is.na(pain_session_2_run_1_2) & !is.na(pain_session_2_run_3_4) & (is.na(pain_session_1_run_1_2) | is.na(pain_session_1_run_3_4))) %>% pull(id)
+# Identify subjects who completed all sessions
+wide_data %>% filter(!is.na(pain_session_1_run_1_2) & !is.na(pain_session_1_run_3_4) & !is.na(pain_session_2_run_1_2) & !is.na(pain_session_2_run_3_4)) %>% summarise(n = n())
+wide_data %>% filter(!is.na(pain_session_1_run_1_2) & !is.na(pain_session_1_run_3_4) & !is.na(pain_session_2_run_1_2) & !is.na(pain_session_2_run_3_4)) %>% pull(id)
+complete_ids = wide_data %>% filter(!is.na(pain_session_1_run_1_2) & !is.na(pain_session_1_run_3_4) & !is.na(pain_session_2_run_1_2) & !is.na(pain_session_2_run_3_4)) %>% pull(id)
+
+# Get complete data
+merged_data_complete = merged_data %>% filter(id %in% complete_ids)
+wide_data_complete = wide_data %>% filter(id %in% complete_ids)
+
+
+## Get ICCs
 library(lme4)
 library(performance)
-
+library(irr)
+library(car)
 # Fit a linear mixed model with pain as the dependent variable and subject ID as a random effect
 lmm_model <- lmer(pain ~ (1 | id), data = merged_data, REML = TRUE)
-
+# Compute ICC
+icc_result <- icc(lmm_model)
+summary(icc_result)
+# Fit a linear mixed model with pain as the dependent variable and subject ID as a random effect
+lmm_model <- lmer(money ~ (1 | id), data = merged_data, REML = TRUE)
 # Compute ICC
 icc_result <- icc(lmm_model)
 summary(icc_result)
 
-library(irr)
-icc_result <- irr::icc(wide_data[, c("pain_session_1", "pain_session_2")], model = "twoway", type = "consistency", unit = "single")
-print(icc_result)
+is.factor(merged_data_complete$session)
+is.factor(merged_data_complete$run)
+is.factor(merged_data_complete$id)
+merged_data_complete$id = as.factor(merged_data_complete$id)
+
+lmm_model <- lmer(pain ~ session*run + (1 | id), data = merged_data_complete, REML = TRUE)
+Anova(lmm_model,test="F")
+ggplot(merged_data_complete, aes(x = reorder(interaction(session, run, sep = "_"), as.numeric(session)), 
+                                 y = pain)) +
+  stat_summary(fun = mean, geom = "bar", fill = "red", color = "black") +
+  stat_summary(fun.data = function(x) mean_se(x, mult = 1), geom = "errorbar", width = 0.2) +
+  labs(x = "Session / Run", y = "Mean Pain Score", title = "Mean Pain Across Sessions and Runs") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+
+
+lmm_model <- lmer(money ~ session*run + (1 | id), data = merged_data_complete, REML = TRUE)
+Anova(lmm_model,test="F")
+ggplot(merged_data_complete, aes(x = reorder(interaction(session, run, sep = "_"), as.numeric(session)), 
+                                 y = money)) +
+  stat_summary(fun = mean, geom = "bar", fill = "lightblue", color = "black") +
+  stat_summary(fun.data = function(x) mean_se(x, mult = 1), geom = "errorbar", width = 0.2) +
+  labs(x = "Session / Run", y = "Mean Pain Score", title = "Mean Reward Across Sessions and Runs") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+
 
 
 # correlation between anxiety level and modelling parameters.

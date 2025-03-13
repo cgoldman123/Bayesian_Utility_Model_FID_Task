@@ -12,7 +12,7 @@ data.DT <- data.table(read.csv("data/expanded_data_LIBR.csv"))
 data.DT <- data.DT %>% dplyr::rename(trial = Trial)
 
 
-# Add run information. Note that participants performed four runs of 30 trials in each session.
+# Note that participants performed four runs of 30 trials in each session.
 # Runs 1 and 2 contained the same color predators, as did runs 3 and 4.
 data.DT[trial <= 60, subject := paste0(subject, "_run_1_2")]
 data.DT[trial <= 60, run := "run_1_2"]
@@ -30,10 +30,11 @@ data.DT$color = data.DT$PredatorSpeed
 data.DT[, color := factor(c("slow", "fast")[color],
                              levels = c("slow", "fast"))]
 # round FID to nearest integer
-data.DT$FID = round(data.DT$FID) # necessary for plots; perhaps we don't want to lose this info for analysis
+data.DT$FID = round(data.DT$FID) # necessary for plots; also would be needed for mulitnomial logit model
 
-# Even subject IDs received the "right" distribution of attack speeds and rewards for v1, but the "left" distribution for v2 (see Rayus' readme for explanation)
-# Perhaps actually it's the opposite; I verify this empirically below
+# Even subject IDs received the "right" distribution for v1, but the "left" distribution for v2 (see Rayus' readme for explanation)
+# For the right distribution, the predator will travel an average of 5 units more before attacking (for both fast and slow predators),
+# making it slower on average (i.e., lower attack distances)
 data.DT <- data.DT %>%
   mutate(
     # Extract the numeric part of the subject_id
@@ -44,11 +45,19 @@ data.DT <- data.DT %>%
   mutate(session = substr(session, 1, 1)) %>%
   mutate(    # Apply the logic to create the distribution column
     distribution = dplyr::case_when(
-      numeric_id %% 2 == 0 & session == "1" ~ "left",
-      numeric_id %% 2 == 0 & session == "2" ~ "right",
-      numeric_id %% 2 == 1 & session == "1" ~ "right",
-      numeric_id %% 2 == 1 & session == "2" ~ "left"
+      numeric_id %% 2 == 0 & session == "1" ~ "right",
+      numeric_id %% 2 == 0 & session == "2" ~ "left",
+      numeric_id %% 2 == 1 & session == "1" ~ "left",
+      numeric_id %% 2 == 1 & session == "2" ~ "right"
     ))
+
+# Two subjects were accidentally given the same distribution for both sessions, probably because someone put T0 or T1 for both
+# Adjust the rows that were improperly labeled
+data.DT[subject_id == "BV250_ses-v1_run_1_2" | subject_id == "BV250_ses-v1_run_3_4", distribution:= "left"]
+data.DT[subject_id == "BR982_ses-v2_run_1_2" | subject_id == "BR982_ses-v2_run_3_4", distribution:= "right"]
+
+
+
 
 
 data.DT <- data.DT[FID > 0, ]  # discard those FID <= 0
