@@ -19,6 +19,11 @@ for i = 1:length(subfolders)
     subject_folder = subfolders(i).name;
     subdat.subject = strrep(subject_folder, 'sub-', '');
 
+    % if ~strcmp(subdat.subject,'BV156')
+    %     continue;
+    % end
+    
+    
     % Loop through both ses-v1 and ses-v2 folders
     for ses = {'ses-v1', 'ses-v2'}
         % flag for valid subject data
@@ -27,39 +32,27 @@ for i = 1:length(subfolders)
         if ~isfolder(func_folder)
             continue;
         end
-        all_tsv_files = [];
-        % each task run was broken up into four parts
-        for i = 1:4
-            search_pattern = sprintf('%s_%s_task-flightinitiationdistance%d_events.tsv', subject_folder, ses{1}, i);
-            tsv_files = dir(fullfile(func_folder, search_pattern));
-            % skip any subject who doesn't have complete data for a task
-            % run (or duplicate data)
-            if length(tsv_files) ~= 1 
-                valid_task_run = 0;
-                fprintf('%s does not have valid data for %s\n', subdat.subject, ses{1});
-                break;
-            end
-            all_tsv_files = [all_tsv_files; tsv_files];  % Append found files to the list
-        end
-        % if participant did not have complete data for this task run,
-        % continue
-        if ~valid_task_run
-            continue;
-        end
-        % Loop through the found files and build full file
+        % Each task run was broken up into four runs of 30 trials each
+        % Combine these parts to build a full table for the session
         tsv_data_full = table();
-        for j = 1:length(all_tsv_files)
-            tsv_file_path = fullfile(all_tsv_files(j).folder, all_tsv_files(j).name);
-            tsv_data = readtable(tsv_file_path, 'FileType', 'text', 'Delimiter', '\t');
-            tsv_data.trial = tsv_data.trial_number + ((j-1) * 30);
-            tsv_data_full = [tsv_data_full; tsv_data];
+        % Keep track of the number of runs they completed
+        has_runs = [];
+        for run = 1:4
+            search_pattern = sprintf('%s_%s_task-flightinitiationdistance%d_events.tsv', subject_folder, ses{1}, run);
+            tsv_file = dir(fullfile(func_folder, search_pattern));
+            % Check to see if there is a file for this run
+            if ~isempty(tsv_file)
+                tsv_data = readtable(fullfile(tsv_file.folder, tsv_file.name), 'FileType', 'text', 'Delimiter', '\t');
+                % check to make sure this file is complete (i.e., it has 30
+                % trials). This will appear to be 31 because it's zero indexed and
+                % trial_number==30 isn't an actual trial. 
+                if length(unique(tsv_data.trial_number(~isnan(tsv_data.trial_number)))) == 31
+                    tsv_data.trial = tsv_data.trial_number + ((run-1) * 30);
+                    tsv_data_full = [tsv_data_full; tsv_data];
+                    has_runs = [has_runs; run];
+                end
+            end
         end
-        
-        % check to make sure contains all 120 trials
-        if ~all(ismember(1:120, tsv_data_full.trial))
-            continue;
-        end
-        
         
         % For trial_type, here is how to parse: <0,1,2,3,4>_<S,F> = Block Type (0=0_0, 1=1_1, 2=1_2, 3=2_1, 4=2_2) _ Predator Type (slow, fast) ; Note: block type code is <reward multiplier_shock multiplier>
         % i.e. S = slow, F = fast
@@ -73,10 +66,17 @@ for i = 1:length(subfolders)
         % participant’s figure is placed 10 units to the safety exit." I
         % will therefore subtract from 80 the values in the table showing
         % how far the predator traveled to get relative distances
-        num_trials = 120;
+
+        % Get the number of trials
+        num_trials = length(has_runs)*30;
         trial_data = zeros(num_trials, 6); % Preallocate for trial, trial_type, FID, AD, reward_level, shock_level
+        trials_per_run = 30;
+        % Get the trial numbers to iterate through
+        trial_list = reshape(cell2mat(arrayfun(@(r) (r-1)*trials_per_run : r*trials_per_run - 1, has_runs(:)', 'UniformOutput', false)), 1, []);
+
         for trial = 0:num_trials-1
-            trial_rows = tsv_data_full(tsv_data_full.trial == trial,:);
+            game_trial = trial_list(trial+1); % Note that this for loop will always go from 0 to the number of trials-1, but someone may complete only the last two blocks so their game_number will go from 61 to 120 instead of 0 to 59.
+            trial_rows = tsv_data_full(tsv_data_full.trial == game_trial,:);
             
             % flight initiation
             flight_initiation_idx = find(trial_rows.event_code == 10);
@@ -116,7 +116,7 @@ for i = 1:length(subfolders)
             end
             
              % Store the results for the current trial
-            trial_data(trial + 1, :) = [trial+1, trial_type, FID, AD, reward_level, shock_level];
+            trial_data(trial + 1, :) = [game_trial+1, trial_type, FID, AD, reward_level, shock_level];
         end
         trial_table = array2table(trial_data, 'VariableNames', {'Trial', 'PredatorSpeed', 'FID', 'AD', 'RewardLevel', 'ShockLevel'});
         trial_table.subject = repmat([subdat.subject '_' ses{1}], num_trials, 1);  % Assuming subject_id is a constant for all trials
@@ -137,6 +137,6 @@ all_data(contains(all_data.subject, 'MI999'), :) = []; % Now this should work
 
 
 % save results
-%writetable(all_data, 'L:\rsmith\lab-members\cgoldman\ironside_FID\LIBR_FID_scripts_CMG\data\expanded_data_LIBR.csv');
+%writetable(all_data, 'L:\rsmith\lab-members\cgoldman\ironside_FID\LIBR_FID_scripts_CMG\data\expanded_data_LIBR_5-28-25.csv');
 
 end

@@ -7,7 +7,7 @@ library(gridExtra)
 
 # read data
 setwd("L://rsmith//lab-members//cgoldman//ironside_FID//LIBR_FID_scripts_CMG")
-data.DT <- data.table(read.csv("data/expanded_data_LIBR.csv"))
+data.DT <- data.table(read.csv("data/expanded_data_LIBR_5-28-25.csv"))
 # Rename trial column
 data.DT <- data.DT %>% dplyr::rename(trial = Trial)
 
@@ -56,8 +56,36 @@ data.DT <- data.DT %>%
 data.DT[subject_id == "BV250_ses-v1_run_1_2" | subject_id == "BV250_ses-v1_run_3_4", distribution:= "left"]
 data.DT[subject_id == "BR982_ses-v2_run_1_2" | subject_id == "BR982_ses-v2_run_3_4", distribution:= "right"]
 
+# Verify that this distribution mapping is correct by looking through the json files that contain distribution info:
+library(jsonlite)
 
-
+# Define the base directory
+base_dir <- "L:/NPC/DataSink/study-Ironside-2023-TCADPilot/data-original/functional_session"
+# Find all FID_balance.json files recursively
+json_files <- list.files(base_dir, pattern = "FID_balance\\.json$", recursive = TRUE, full.names = TRUE)
+distribution_info_json <- data.frame(id = character(), distribution = character(), stringsAsFactors = FALSE)
+# Loop through each file and extract the needed information
+for (file in json_files) {
+  json_data <- fromJSON(file)
+  if (!is.null(json_data$balance)) {
+    balance_entries <- json_data$balance
+    distribution_info_json <- dplyr::bind_rows(distribution_info_json, data.frame(
+      id = balance_entries$sid,
+      distribution = balance_entries$distribution,
+      stringsAsFactors = FALSE
+    ))
+    
+  }
+}
+# Compare to data.DT
+distribution_info_DT <- data.DT %>%
+  mutate(subject_short = paste0(substr(subject_id, 1, 5), ifelse(session == 1, "_T0", "_T1"))) %>%
+  distinct(subject_short, session, distribution, .keep_all = TRUE) %>%
+  select(subject_short, distribution) %>%
+  dplyr::rename(distribution_DT = distribution)
+  
+combined_distribution_dataframe <- left_join(distribution_info_json, distribution_info_DT, by = c("id" = "subject_short"))
+combined_distribution_dataframe$identical_dist = combined_distribution_dataframe$distribution == combined_distribution_dataframe$distribution_DT
 
 
 data.DT <- data.DT[FID > 0, ]  # discard those FID <= 0
@@ -152,7 +180,7 @@ AD.estimates.right <- data.DT[distribution == "right",
 
 # BV250 has fast for both
 # BR982 has slow for both
-# In the balance document, it seems that right corresponds to slow?
+# Right corresponds to slow!
 
 
 # sequentially process trials for each (subject, color)
