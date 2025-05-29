@@ -20,6 +20,9 @@ data.DT[trial > 60 & trial <= 120, subject := paste0(subject, "_run_3_4")]
 data.DT[trial > 60 & trial <= 120, run := "run_3_4"]
 # Re-label trials of runs 3_4 (e.g., instead of trial 65, it would be trial 5 of run 3_4)
 data.DT[trial > 60, trial := trial - 60]
+# filter out anyone who only has 30 trials for runs_!_2 or runs_3_4
+data.DT = data.DT[, if (.N == 60) .SD, by = subject]
+
 
 
 data.DT$subject_id = data.DT$subject
@@ -58,7 +61,6 @@ data.DT[subject_id == "BR982_ses-v2_run_1_2" | subject_id == "BR982_ses-v2_run_3
 
 # Verify that this distribution mapping is correct by looking through the json files that contain distribution info:
 library(jsonlite)
-
 # Define the base directory
 base_dir <- "L:/NPC/DataSink/study-Ironside-2023-TCADPilot/data-original/functional_session"
 # Find all FID_balance.json files recursively
@@ -79,26 +81,20 @@ for (file in json_files) {
 }
 # Compare to data.DT
 distribution_info_DT <- data.DT %>%
-  mutate(subject_short = paste0(substr(subject_id, 1, 5), ifelse(session == 1, "_T0", "_T1"))) %>%
-  distinct(subject_short, session, distribution, .keep_all = TRUE) %>%
-  select(subject_short, distribution) %>%
+  dplyr::mutate(subject_short = paste0(substr(subject_id, 1, 5), ifelse(session == 1, "_T0", "_T1"))) %>%
+  dplyr::distinct(subject_short, session, distribution, .keep_all = TRUE) %>%
+  dplyr::select(subject_short, distribution) %>%
   dplyr::rename(distribution_DT = distribution)
   
-combined_distribution_dataframe <- left_join(distribution_info_json, distribution_info_DT, by = c("id" = "subject_short"))
+combined_distribution_dataframe <- dplyr::left_join(distribution_info_json, distribution_info_DT, by = c("id" = "subject_short"))
 combined_distribution_dataframe$identical_dist = combined_distribution_dataframe$distribution == combined_distribution_dataframe$distribution_DT
 
 
 data.DT <- data.DT[FID > 0, ]  # discard those FID <= 0
 setkey(data.DT, subject, trial, color)
 
-# plot
-fig.1 <- data.DT %>% dplyr::filter(subject %in% c("1","2","3")) %>%
-    ggplot(., aes(x = trial, y = AD, color = color)) +
-    geom_line(size = 1, alpha = .5) +
-    facet_wrap( ~ subject) +
-    ggtitle("AD ~ trial by subject")
-print(fig.1)
 
+# Plot FID ~ AD for all subjects
 fig.2 <- ggplot(data.DT, aes(x = trial, y = FID, color = color)) +
     geom_line(size = 1, alpha = .5) +
     facet_wrap( ~ subject) +
@@ -106,39 +102,48 @@ fig.2 <- ggplot(data.DT, aes(x = trial, y = FID, color = color)) +
 print(fig.2)
 
 
-fig.3 <- data.DT %>% dplyr::filter(subject %in% c("1","2","3")) %>%
-  dplyr::filter(RewardLevel == 2, ShockLevel == 1) %>% 
-  dplyr::mutate(trial = as.numeric(as.character(trial))) %>%  # Ensure numeric
-  dplyr::group_by(subject) %>% 
-  dplyr::arrange(subject, trial) %>%  # Arrange within each subject
-  dplyr::mutate(trial_new = dplyr::row_number()) %>% 
-  dplyr::ungroup() %>%  
-  ggplot(aes(x = trial_new, y = FID, color = color)) +
-  geom_line(size = 1, alpha = 0.5) +
-  facet_wrap(~ subject) +
-  ggtitle("FID ~ trial by subject for the high reward low shock condition")
-print(fig.3)
-
-fig.4 <- data.DT %>% dplyr::filter(subject %in% c("1","2","3")) %>%
-  dplyr::filter(RewardLevel == 1, ShockLevel == 2) %>% 
-  dplyr::mutate(trial = as.numeric(as.character(trial))) %>%  # Ensure numeric
-  dplyr::group_by(subject) %>% 
-  dplyr::arrange(subject, trial) %>%  # Arrange within each subject
-  dplyr::mutate(trial_new = dplyr::row_number()) %>% 
-  dplyr::ungroup() %>%  
-  ggplot(aes(x = trial_new, y = FID, color = color)) +
-  geom_line(size = 1, alpha = 0.5) +
-  facet_wrap(~ subject) +
-  ggtitle("FID ~ trial by subject for the low reward high shock condition")
-print(fig.4)
-
+# Plot FID ~ AD for all subjects
 fig.5 <- ggplot(data.DT, aes(x = AD, y = FID, color = color)) +
     geom_point(size = 1, alpha = .5) +
     facet_wrap( ~ subject) +
     ggtitle("FID ~ AD by subject")
 print(fig.5)
 
+# For one subject, plot the FID ~ Trial by condition (high/low reward/shock values)
+# Note that the line is truncated because the condition reward/shock=0 is not included in the plot.
+plot_data <- data.DT %>%
+  dplyr::filter(subject == "46", RewardLevel %in% c(1, 2), ShockLevel %in% c(1, 2)) %>%
+  dplyr::mutate(
+    condition_label = dplyr::case_when(
+      RewardLevel == 2 & ShockLevel == 1 ~ "High Reward, Low Shock",
+      RewardLevel == 1 & ShockLevel == 2 ~ "Low Reward, High Shock",
+      RewardLevel == 2 & ShockLevel == 2 ~ "High Reward, High Shock",
+      RewardLevel == 1 & ShockLevel == 1 ~ "Low Reward, Low Shock"
+    ),
+    trial = as.numeric(as.character(trial))
+  ) %>%
+  dplyr::group_by(subject, condition_label) %>%
+  dplyr::arrange(trial) %>%
+  dplyr::mutate(trial_new = dplyr::row_number()) %>%
+  dplyr::ungroup()
 
+# Calculate mean FID per condition
+mean_lines <- plot_data %>%
+  dplyr::group_by(condition_label) %>%
+  dplyr::summarize(mean_FID = mean(FID, na.rm = TRUE))
+
+# Plot with mean line
+fig_combined <- ggplot(plot_data, aes(x = trial_new, y = FID, color = color)) +
+  geom_line(size = 1, alpha = 0.5) +
+  geom_hline(data = mean_lines, aes(yintercept = mean_FID), linetype = "dashed", color = "black") +
+  facet_wrap(~ condition_label, scales = "free_x") +
+  labs(
+    title = paste("FID ~ Trial by Condition (Subject", dplyr::first(plot_data$subject), ")"),
+    x = "Trial", y = "FID"
+  ) +
+  theme_minimal()
+
+print(fig_combined)
 
 
 
@@ -263,6 +268,28 @@ fig <- ggplot(results.DT, aes(x = p.escape, y = FID, color = color)) +
     ggtitle("FID ~ p(escape | FID) by subject")
 print(fig)
 
+
+## Plot FID by reward level and shock level
+plot_df <- data.DT[, .(
+  mean_FID = mean(FID, na.rm = TRUE),
+  se_FID = sd(FID, na.rm = TRUE) / sqrt(.N)
+), by = .(RewardLevel, ShockLevel)]
+
+# Convert grouping variables to factors in plot_df only
+plot_df[, RewardLevel := as.factor(RewardLevel)]
+plot_df[, ShockLevel := as.factor(ShockLevel)]
+
+# Plot
+ggplot(plot_df, aes(x = RewardLevel, y = mean_FID, fill = ShockLevel)) +
+  geom_bar(stat = "identity", position = position_dodge(width = 0.8), width = 0.7) +
+  geom_errorbar(aes(ymin = mean_FID - se_FID, ymax = mean_FID + se_FID),
+                position = position_dodge(width = 0.8), width = 0.2) +
+  labs(x = "Reward Level", y = "Mean FID ± SE", fill = "Shock Level") +
+  theme_minimal()
+
+
 # Get the estimated probability of escape under various FID based on a person's estimate
 # of the attack distance
 source("plot_distribution.R")
+
+

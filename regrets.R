@@ -33,6 +33,15 @@ bayesian.retrace.DT <- ldply(seq_along(subjects), .fun = function(i) {
 
 bayesian.retrace.DT <- data.table(bayesian.retrace.DT)
 
+
+# Calculate average absolute error between predicted and actual FID
+bayesian.retrace.DT$abs_error_FID = abs(bayesian.retrace.DT$FID - bayesian.retrace.DT$FID.optimal)
+summarized_abs_error = bayesian.retrace.DT[, .(
+  FID_mean_abs_error = mean(abs_error_FID, na.rm = TRUE),
+  FID_sd_abs_error = sd(abs_error_FID, na.rm = TRUE)), by = subject]
+
+
+
 # compute regrets
 regrets.DT <- bayesian.retrace.DT[FID>0,
                                   .(regret = sum(total.util.optimal - total.util)),
