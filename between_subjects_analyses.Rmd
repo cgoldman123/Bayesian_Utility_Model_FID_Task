@@ -11,14 +11,19 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r Read in files}
 library(tidyr)
 library(dplyr)
+library(lme4)
+library(performance)
+library(irr)
+library(car)
+library(tidyverse)
 
-data = read.csv("L:/rsmith/lab-members/cgoldman/ironside_FID/LIBR_FID_scripts_CMG/results/FID_merged_data_2025-05-29_11_23_19.csv")
 
-```
+task_data = read.csv("L:/rsmith/lab-members/cgoldman/ironside_FID/LIBR_FID_scripts_CMG/results/FID_merged_data_2025-05-29_11_23_19.csv")
+redcap_data = read.csv("L:/rsmith/lab-members/cgoldman/ironside_FID/LIBR_FID_scripts_CMG/TCAD_redcap_report_6-2-25.csv")
 
-```{r Compare Runs and Sessions}
-# Pivot the data so each subject (id) has one row, with session-specific columns
-wide_data <- data %>%
+
+# Pivot the task data so each subject (id) has one row, with session-specific columns
+wide_data <- task_data %>%
   dplyr::select(c(id, session, run, regret, pain, money, money.per.pain)) %>%  # Ensure only relevant columns are included
   distinct() %>%  # Remove duplicates if necessary
   pivot_wider(
@@ -26,6 +31,164 @@ wide_data <- data %>%
     values_from = c(regret, pain, money, money.per.pain),
     names_glue = "{.value}_session_{session}_run_{run}"
   )
+
+
+
+# Score the Trait Fear Scale
+# Use the supplemental word document in "Quantifying Dispositional Fear as Threat Sensitivity: Development and Initial Validation of a Model-Based Scale Measure" Kramer 2019 https://journals.sagepub.com/doi/abs/10.1177/1073191119837613
+reverse_items <- c( 1,  3,  6,  8, 11, 13, 15, 17, 19, 21, 23, 25, 28, 30, 32, 34, 36, 37, 39, 42)
+item_names <- paste0("tfs_", 1:44)
+df_scored <- redcap_data
+# Shift all items from 1–4 to 0–3
+df_scored[item_names] <- lapply(df_scored[item_names], function(x) x - 1)
+# Reverse the specified items
+reverse_names <- paste0("tfs_", reverse_items)
+df_scored[reverse_names] <- lapply(df_scored[reverse_names], function(x) 3 - x)
+
+# Compute the total score
+df_scored$tfs_total_score <- rowSums(df_scored[item_names], na.rm = TRUE)
+# REmove the cols for each question
+df_scored <- df_scored[, !names(df_scored) %in% item_names]
+
+
+# Score the MASQ Scale
+# Scoring information from Tate Poplin's R script that utilized this website https://arc.psych.wisc.edu/self-report/mood-and-anxiety-symptom-questionnaire-masq/
+df_scored$MASQ_general_distress_mixed = df_scored$masq_4 + df_scored$masq_17 + df_scored$masq_29 + df_scored$masq_31 +
+                        df_scored$masq_34 + df_scored$masq_37 + df_scored$masq_50 + df_scored$masq_51 +
+                        df_scored$masq_70 + df_scored$masq_76 + df_scored$masq_80 + df_scored$masq_83 + 
+                        df_scored$masq_84 + df_scored$masq_90 + (6-df_scored$masq_5)
+df_scored$MASQ_anxious_arousal = df_scored$masq_3 + df_scored$masq_19 + df_scored$masq_25 + df_scored$masq_48 + 
+                    df_scored$masq_52 + df_scored$masq_55 + df_scored$masq_57 + df_scored$masq_61 + 
+                    df_scored$masq_67 + df_scored$masq_69 + df_scored$masq_73 +df_scored$masq_75 + 
+                    df_scored$masq_79 +df_scored$masq_85 + df_scored$masq_87 + df_scored$masq_88
+df_scored$MASQ_anxious_symptoms = df_scored$masq_2 + df_scored$masq_9 + df_scored$masq_12 + df_scored$masq_15 + 
+                    df_scored$masq_20 + df_scored$masq_59 + df_scored$masq_63 + df_scored$masq_65 + 
+                    df_scored$masq_77 + df_scored$masq_81 + df_scored$masq_82
+
+#Items 1, 9, 15, 19, 23, and 25 are reverse scored so concept from above but *6 items
+df_scored$MASQ_anhedonic_depression = df_scored$masq_5 + df_scored$masq_11 + 36 - df_scored$masq_1 - df_scored$masq_9 - 
+                    df_scored$masq_15 - df_scored$masq_19 - df_scored$masq_23 - df_scored$masq_25
+
+df_scored$MASQ_depressive_symptoms = df_scored$masq_6 + df_scored$masq_8 + df_scored$masq_10 + df_scored$masq_13 + 
+                      df_scored$masq_16 + df_scored$masq_22 + df_scored$masq_24 + df_scored$masq_42 + 
+                      df_scored$masq_47 + df_scored$masq_56 + df_scored$masq_64 + df_scored$masq_74
+
+item_names <- paste0("masq_", 1:90)
+df_scored <- df_scored[, !names(df_scored) %in% item_names]
+
+## PSWQ Scoring
+df_scored = df_scored %>% mutate(PSWQ_total = (6-pswq_1)+pswq_2+(6-pswq_3)+pswq_4+pswq_5+pswq_6+pswq_7+(6-pswq_8)+pswq_9+(6-pswq_10)+(6-pswq_11)+pswq_12+pswq_13+pswq_14+pswq_15+pswq_16) %>% dplyr::select(-c(paste0('pswq_', 1:16)))
+
+## BIS/BAS Scoring
+# https://www.safetylit.org/instruments/87-MVO-10-10-Ia.pdf
+# Reverse score each item except 2 and 22
+df_scored$bas_drive = rowSums(5 - df_scored[, c("bisbas_3", "bisbas_9", "bisbas_12", "bisbas_21")])
+df_scored$bas_fun_seeking = rowSums(5 - df_scored[, c("bisbas_5", "bisbas_10", "bisbas_15", "bisbas_20")])
+df_scored$bas_reward_resp = rowSums(5 - df_scored[, c("bisbas_4", "bisbas_7", "bisbas_14", "bisbas_18","bisbas_23")])
+df_scored$bis = rowSums(5 - df_scored[, c("bisbas_8", "bisbas_13", "bisbas_16", "bisbas_19","bisbas_24")]) + df_scored$bisbas_2 + df_scored$bisbas_22
+item_names <- paste0("bisbas_", 1:24)
+df_scored <- df_scored[, !names(df_scored) %in% item_names]
+
+## Intolerance of uncertainty scale
+# Scoring from https://www.phenxtoolkit.org/protocols/view/650701
+df_scored$ius_total_score = rowSums(df_scored[,c(paste0("iuc_",1:27))])
+item_names <- paste0("iuc_", 1:27)
+df_scored <- df_scored[, !names(df_scored) %in% item_names]
+
+
+
+### Rename columns
+library(dplyr)
+
+# Rename columns in df_scored: for columns that contain "vas_" but not "v2", replace "_1" with "_pretask"
+df_scored <- df_scored %>%
+  rename_with(~ gsub("_1", "_pretask", .x),
+              .cols = grep("vas_", names(df_scored), value = TRUE) %>% 
+                      setdiff(grep("v2", names(df_scored), value = TRUE)))
+# Rename columns in df_scored: for columns that contain both "vas_" and "v2", replace "_1_v2" with "_posttask"
+df_scored <- df_scored %>%
+  rename_with(~ gsub("_1_v2", "_posttask", .x),
+              .cols = grep("vas_.*v2", names(df_scored), value = TRUE))
+
+# Append "_pretask" to columns that contain "panasx" but not "post"
+df_scored <- df_scored %>%
+  rename_with(~ paste0(.x, "_pretask"),
+              .cols = grep("panasx", names(df_scored), value = TRUE) %>%
+                      setdiff(grep("post", names(df_scored), value = TRUE)))
+
+
+# Replace "_post" with "_posttask" in columns that contain both "panasx" and "_post"
+df_scored <- df_scored %>%
+  rename_with(~ gsub("_post", "_posttask", .x),
+              .cols = grep("panasx.*_post", names(df_scored), value = TRUE))
+
+# Append "_pretask" to columns that contain "stais" but not "_v2"
+df_scored <- df_scored %>%
+  rename_with(~ paste0(.x, "_pretask"),
+              .cols = grep("stais", names(df_scored), value = TRUE) %>%
+                      setdiff(grep("_v2", names(df_scored), value = TRUE)))
+
+# Replace "_v2" with "_posttask" in columns that contain both "stais" and "_v2"
+df_scored <- df_scored %>%
+  rename_with(~ gsub("_v2", "_posttask", .x),
+              .cols = grep("stais.*_v2", names(df_scored), value = TRUE))
+
+# Replace "_pre" with "_pretask" in columns that contain "kss_" and "_pre" but not "_pre_post"
+df_scored <- df_scored %>%
+  rename_with(~ gsub("_pre", "_pretask", .x),
+              .cols = grep("kss_.*_pre", names(df_scored), value = TRUE) %>%
+                      setdiff(grep("_pre_post", names(df_scored), value = TRUE)))
+
+# Replace "_pre_post" with "_posttask" in columns that contain "kss_" and "_pre_post"
+df_scored <- df_scored %>%
+  rename_with(~ gsub("_pre_post", "_posttask", .x),
+              .cols = grep("kss_.*_pre_post", names(df_scored), value = TRUE))
+
+
+
+
+
+
+```
+```{r Merge task data and questionnaire data }
+
+# STEP 1: Reshape wide_data to long format by parameter and session_run
+long_params <- wide_data %>%
+  pivot_longer(-id, names_to = "var", values_to = "value") %>%
+  separate(var, into = c("parameter", "session_run"), sep = "_session_") %>%
+  mutate(session_run = paste0("session_", session_run)) %>%
+  pivot_wider(names_from = parameter, values_from = value)
+
+# STEP 2: Get state-level questionnaire data (session-specific)
+state_vars <- df_scored %>%
+  filter(redcap_event_name %in% c("session_1_arm_1", "session_2_arm_1")) %>%
+  select(
+    record_id,
+    redcap_event_name,
+    stais_state_score_posttask,
+    stais_state_score_pretask,
+    starts_with("panasx_"),
+    starts_with("vas_")
+  ) %>%
+  rename(session = redcap_event_name)
+
+# STEP 3: Get trait-level questionnaire data (session-agnostic)
+trait_vars <- df_scored %>%
+  filter(redcap_event_name == "consent_arm_1") %>%
+  select(record_id, tfs_total_score, MASQ_anhedonic_depression, MASQ_anxious_arousal, MASQ_anxious_symptoms, MASQ_depressive_symptoms, MASQ_general_distress_mixed, PSWQ_total, teps_anticipatory_score, teps_consummatory_score, bis, bas_drive, bas_fun_seeking, bas_reward_resp, ius_total_score, stait_trait_score)  # add more traits if needed
+
+# STEP 4: Join trait and state questionnaires to the long parameter data
+final_data <- long_params %>%
+  mutate(session = str_extract(session_run, "session_\\d") %>% paste0("_arm_1")) %>%  # match state_vars$session
+  left_join(state_vars, by = c("id" = "record_id", "session")) %>%
+  left_join(trait_vars, by = c("id" = "record_id"))
+
+
+
+```
+
+```{r Compare Runs and Sessions}
+
 
 
 # Comparing Runs and Sessions of FID Task
@@ -47,11 +210,6 @@ data_complete = data %>% filter(id %in% complete_ids)
 wide_data_complete = wide_data %>% filter(id %in% complete_ids)
 
 
-## Get ICCs
-library(lme4)
-library(performance)
-library(irr)
-library(car)
 # Fit a linear mixed model with pain as the dependent variable and subject ID as a random effect
 lmm_model <- lmer(pain ~ (1 | id), data = data, REML = TRUE)
 # Compute ICC
@@ -91,228 +249,160 @@ ggplot(data_complete, aes(x = reorder(interaction(session, run, sep = "_"), as.n
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
 ```
 
-```{r}
-# correlation between anxiety level and modelling parameters.
+```{r Relationship between trait measures and modelling parameters.}
+##### correlation between trait measures and modeling parameters ##### 
+
+# Remove outlier pain value
+df_lm <- final_data %>%
+  mutate(pain = ifelse(pain < -30, NA, pain))
+
+# df_lm = final_data
+
+
+
+
+# Trait Fear
+model = lmer(pain ~ tfs_total_score + (1|id), data = df_lm)
+Anova(model,test="F")
+model = lmer(money ~ tfs_total_score +  (1|id), data = df_lm)
+Anova(model,test="F")
+# MASQ
+model = lmer(pain ~ MASQ_general_distress_mixed + (1|id), data = df_lm)
+Anova(model,test="F")
+model = lmer(money ~ MASQ_general_distress_mixed +  (1|id), data = df_lm)
+Anova(model,test="F")
+model = lmer(pain ~ MASQ_anxious_arousal + (1|id), data = df_lm)
+Anova(model,test="F")
+model = lmer(money ~ MASQ_anxious_arousal +  (1|id), data = df_lm)
+Anova(model,test="F")
+model = lmer(pain ~ MASQ_anxious_symptoms + (1|id), data = df_lm)
+Anova(model,test="F")
+model = lmer(money ~ MASQ_anxious_symptoms +  (1|id), data = df_lm)
+Anova(model,test="F")
+model = lmer(pain ~ MASQ_anhedonic_depression + (1|id), data = df_lm)
+Anova(model,test="F")
+model = lmer(money ~ MASQ_anhedonic_depression +  (1|id), data = df_lm)
+Anova(model,test="F")
+model = lmer(pain ~ MASQ_depressive_symptoms + (1|id), data = df_lm)
+Anova(model,test="F")
+model = lmer(money ~ MASQ_depressive_symptoms +  (1|id), data = df_lm)
+Anova(model,test="F")
+# BIS BAS
+model = lmer(pain ~ bis + (1|id), data = df_lm)
+Anova(model,test="F")
+model = lmer(money ~ bis +  (1|id), data = df_lm)
+Anova(model,test="F")
+model = lmer(pain ~ bas_reward_resp + (1|id), data = df_lm)
+Anova(model,test="F")
+model = lmer(money ~ bas_reward_resp +  (1|id), data = df_lm)
+Anova(model,test="F") ######### Marginal negative relationship??
+model = lmer(pain ~ bas_fun_seeking + (1|id), data = df_lm)
+Anova(model,test="F")
+model = lmer(money ~ bas_fun_seeking +  (1|id), data = df_lm)
+Anova(model,test="F")
+model = lmer(pain ~ bas_drive + (1|id), data = df_lm)
+Anova(model,test="F")
+model = lmer(money ~ bas_drive +  (1|id), data = df_lm)
+Anova(model,test="F") ######### Significant negative relationship??
+# PSWQ
+model = lmer(pain ~ PSWQ_total + (1|id), data = df_lm)
+Anova(model,test="F")
+model = lmer(money ~ PSWQ_total +  (1|id), data = df_lm)
+Anova(model,test="F")
+# STAI Trait
+model = lmer(pain ~ stait_trait_score + (1|id), data = df_lm)
+Anova(model,test="F") 
+model = lmer(money ~ stait_trait_score +  (1|id), data = df_lm)
+Anova(model,test="F")
+# IUS
+model = lmer(pain ~ ius_total_score + (1|id), data = df_lm)
+Anova(model,test="F")  #########  Marginal after outlier removed
+model = lmer(money ~ ius_total_score +  (1|id), data = df_lm)
+Anova(model,test="F")
+
+
+#### Plot significant relationships ####
+ggplot(df_lm, aes(x = bas_drive, y = money)) +
+  geom_point() +
+  labs(x = "BAS Drive", y = "Money", title = "Money vs. BAS Drive") +
+  theme_minimal()
+
+# Marginal
+ggplot(df_lm, aes(x = bas_reward_resp, y = money)) +
+  geom_point() +
+  labs(x = "BAS Reward Resp", y = "Money", title = "Money vs. BAS Reward Resp") +
+  theme_minimal()
+
+# Marginal after outlier removed
+ggplot(df_lm, aes(x = ius_total_score, y = pain)) +
+  geom_point() +
+  labs(x = "IUS", y = "Pain", title = "Pain vs. IUS") +
+  theme_minimal()
 
-
-
-
-
-
-
-# Correlation between anxiety level and utility received
-  all.utility <- bayesian.retrace.DT %>%
-  dplyr::group_by(subject) %>%
-  dplyr::summarize(utilityx = mean(total.util, na.rm = TRUE), .groups = "drop")
-
-
-
-
-# Correlation between mean diff FID for fast and slow predators and anxiety
-
-
-
-
-# correlation figures
-flight_anxiety_cor = data.frame(anxiety = subject_anxiety_2016$anxiety, flight = choice.coeff.DT$money)
-
-g <- ggplot(flight_anxiety_cor,aes(x=anxiety, y=flight)) + geom_point(shape=16, size=3) +
-  geom_smooth(method=lm,lwd=1,color="forestgreen") +
-  xlab("Trait Anxiety Inventory") +
-  ylab("Reward Preference") +
-  theme_grey()+
-  theme(axis.title.x = element_text(size=10),
-        axis.text.x  = element_text(size=10)) +
-  theme(axis.title.y = element_text(size=10),
-        axis.text.y  = element_text(size=10)) +
-  ggtitle("Trait Anxiety ~ Reward Preference") +
-  #scale_y_continuous(limits = c(0,40)) +
-  theme(plot.title = element_text(size=10, face="bold"))
-
-g
-
-flight_anxiety_cor = data.frame(anxiety = all.anxiety$anxiety, flight = all.coeff$pain)
-
-g <- ggplot(flight_anxiety_cor,aes(x=anxiety, y=flight)) + geom_point(shape=16, size=3) +
-  geom_smooth(method=lm,lwd=1,color="red") +
-  xlab("Trait Anxiety Inventory") +
-  ylab("Punishment Preference") +
-  theme_grey()+
-  theme(axis.title.x = element_text(size=10),
-        axis.text.x  = element_text(size=10)) +
-  theme(axis.title.y = element_text(size=10),
-        axis.text.y  = element_text(size=10)) +
-  ggtitle("Trait Anxiety ~ Punishment Preference") +
-  #scale_y_continuous(limits = c(0,40)) +
-  theme(plot.title = element_text(size=10, face="bold"))
-
-g
-
-
-
-# plot parameter graph without outliers
-
-all.coeff.DT <- choice.coeff.DT[-27,]
-all.coeff.confint.DT <- choice.coeff.confint.DT[-27,]
-
-{ggplot(cbind(all.coeff.DT, all.coeff.confint.DT),
-        aes(x = pain, y = money,
-            xmin = low.pain, xmax = high.pain,
-            ymin = low.money, ymax = high.money,
-            color = subject)) +
-  geom_errorbar() + geom_errorbarh() +
-  geom_label(aes(label = subject)) +
-  ggtitle("Estimated coefficients and 95% C.I. by subject") +
-  theme_bw() +
-  geom_vline(xintercept = 0, linetype = "dashed") +
-  geom_hline(yintercept = 0, linetype = "dashed") +
-  theme(legend.position="none")} %>% print
-
-
-write.csv(all.regrets.DT,"~/Downloads/all.regrets.DT.csv")
-write.csv(all.coeff.DT,"~/Downloads/all.coeff.DT.csv")
-
-
-# plot FID retrace graph without outliers
-
-all.retrace.DT <- filter(bayesian.retrace.DT,subject!=16 & subject!=19 & subject!=27)
-all.retrace.DT <- bayesian.retrace.DT
-all.regrets.DT <- filter(regrets.DT,subject!=16 & subject!=19 & subject!=27)
-all.regrets.DT <- regrets.DT
-
-{
-  ggplot(all.retrace.DT,
-         aes(x = trial)) +
-  geom_line(aes(y = FID.optimal, color = color), size = 1) +
-  geom_point(aes(y = FID, color = color), shape = 1) +
-  #geom_text(aes(label = display), x = 50, y = 10, size = 3, data = all.regrets.DT) +
-  scale_colour_manual(values = c("dodgerblue2","orange", "red")) +
-  facet_wrap(~ subject,nrow = 4) +
-  theme(
-    strip.background = element_blank(),
-    strip.text.x = element_blank())
-  #ggtitle(paste( "Actual FID (dot) and bayesian optimal alternative (line)", sep = "\n"))+
-  #theme_bw()
-} %>% print
-
-
-
-
-
-
-
-
-# save the result parameter files
-write.csv(subject_anxiety_2016,"~/Downloads/stats_files_for_paper/subject_anxiety_2016.csv")
-write.csv(choice.coeff.DT,"~/Downloads/stats_files_for_paper/choice.coeff.DT.csv")
-write.csv(all.utility,"~/Downloads/stats_files_for_paper/all.utility.csv")
-
-
-# R^2 for the corrlation between predicted fid and actual fid?
-all.fast <- filter(all.retrace.DT,color=="fast")
-all.mid <- filter(all.retrace.DT,color=="mid")
-all.slow <- filter(all.retrace.DT,color=="slow")
-
-
-cor.test(all.fast$FID,all.fast$FID.optimal)
-cor.test(all.mid$FID,all.mid$FID.optimal)
-cor.test(all.slow$FID,all.slow$FID.optimal)
-
-cor.test(bisbas2$V4[1:23],all.fast$FID.optimal[1:23])
-cor.test(bisbas2$V5[1:23],all.fast$FID.optimal[1:23])
-
-cor.test(bisbas2$V4[1:23],all.slow$FID.optimal[1:23])
-cor.test(bisbas2$V5[1:23],all.slow$FID.optimal[1:23])
-
-
-
-
-
-setwd("/Users/songqi/Downloads/kat-risk-estimate-master 2")
-
-
-
-
-# parametric analysis with trial-by-trial regret (absolute value)
-
-bayesian.retrace.DT[,regret := total.util.optimal - total.util]
-bayesian.retrace.DT.far <- filter(bayesian.retrace.DT,color == "fast")
-bayesian.retrace.DT.close <- filter(bayesian.retrace.DT,color == "slow")
-
-para <- bayesian.retrace.DT %>%
-  group_by(subject) %>%
-  summarize(regret = mean(regret))
-
-far_para <- bayesian.retrace.DT.far %>%
-  group_by(subject) %>%
-  summarize(regret = mean(regret))
-
-close_para <- bayesian.retrace.DT.close %>%
-  group_by(subject) %>%
-  summarize(regret = mean(regret))
-
-cor.test(far_para$regret,subject_anxiety_2016$anxiety)
-cor.test(close_para$regret,subject_anxiety_2016$anxiety)
-cor.test(para$regret,subject_anxiety_2016$anxiety)
-
-flight_anxiety_cor = data.frame(anxiety = subject_anxiety_2016$anxiety, flight = far_para$regret)
-
-g <- ggplot(flight_anxiety_cor,aes(x=anxiety, y=flight)) + geom_point(shape=16, size=3) +
-  geom_smooth(method=lm,lwd=1,color="grey") +
-  xlab("Trait Anxiety") +
-  ylab("Distance to Bayesian Ideal") +
-  theme_bw()+
-  theme(axis.title.x = element_text(size=10),
-        axis.text.x  = element_text(size=10)) +
-  theme(axis.title.y = element_text(size=10),
-        axis.text.y  = element_text(size=10)) +
-  ggtitle("") +
-  #scale_y_continuous(limits = c(0,40)) +
-  theme(plot.title = element_text(size=10, face="bold"))
-
-g
-
-
-
-far_para_normal <- far_para$regret/choice.coeff.DT$money
-close_para_normal <- close_para$regret/choice.coeff.DT$money
-para_normal <- para$regret/choice.coeff.DT$money
-
-
-
-cor.test(-scale(perf$rewardx),para$regret)
-
-cor.test(-scale(perf$escapex),para$regret)
-
-cor.test(-scale(perf_close$rewardx),close_para$regret)
-
-cor.test(-scale(perf_far$rewardx),far_para$regret)
-
-
-
-
-flight_anxiety_cor = data.frame(anxiety = far_para$regret, flight = -scale(perf_far$rewardx))
-
-g <- ggplot(flight_anxiety_cor,aes(x=anxiety, y=flight)) + geom_point(shape=16, size=3) +
-  geom_smooth(method=lm,lwd=1,color="royalblue") +
-  xlab("Distance to Bayesian Ideal (fast predators)") +
-  ylab("Performance Score (fast predators)") +
-  theme_bw()+
-  theme(axis.title.x = element_text(size=10),
-        axis.text.x  = element_text(size=10)) +
-  theme(axis.title.y = element_text(size=10),
-        axis.text.y  = element_text(size=10)) +
-  ggtitle("") +
-  #scale_y_continuous(limits = c(0,40)) +
-  theme(plot.title = element_text(size=10, face="bold"))
-
-g
-
-
-
-write.xlsx(far_para ,"/Users/songqi/Downloads/kat-risk-estimate-master 2/far_para.xlsx")
-write.xlsx(close_para ,"/Users/songqi/Downloads/kat-risk-estimate-master 2/close_para.xlsx")
 
 
 ```
+
+```{r Relationship between state measures and modelling parameters.}
+##### correlation between trait measures and modeling parameters ##### 
+# Remove outlier pain value
+df_lm <- final_data %>%
+  mutate(pain = ifelse(pain < -30, NA, pain))
+
+# df_lm = final_data
+
+
+
+# State Anxiety
+model = lmer(pain ~ stais_state_score_pretask + (1|id), data = df_lm)
+Anova(model,test="F")
+model = lmer(money ~ stais_state_score_pretask +  (1|id), data = df_lm)
+Anova(model,test="F")
+model = lmer(pain ~ stais_state_score_posttask + (1|id), data = df_lm)
+Anova(model,test="F")
+model = lmer(money ~ stais_state_score_posttask +  (1|id), data = df_lm)
+Anova(model,test="F")
+# VAS
+model = lmer(pain ~ vas_anxious_posttask + (1|id), data = df_lm)
+Anova(model,test="F")
+model = lmer(money ~ vas_anxious_posttask +  (1|id), data = df_lm)
+Anova(model,test="F")
+model = lmer(pain ~ vas_anxious_pretask + (1|id), data = df_lm)
+Anova(model,test="F")
+model = lmer(money ~ vas_anxious_pretask + (1|id), data = df_lm)
+Anova(model,test="F")
+# PANAS
+model = lmer(pain ~ panasx_fear_score_posttask + (1|id), data = df_lm)
+Anova(model,test="F")
+model = lmer(money ~ panasx_fear_score_posttask +  (1|id), data = df_lm)
+Anova(model,test="F")
+model = lmer(pain ~ panasx_fear_score_pretask + (1|id), data = df_lm)
+Anova(model,test="F")
+model = lmer(money ~ panasx_fear_score_pretask +  (1|id), data = df_lm)
+Anova(model,test="F")
+
+model = lmer(pain ~ panasx_posaffect_score_posttask + (1|id), data = df_lm)
+Anova(model,test="F")
+model = lmer(money ~ panasx_posaffect_score_posttask +  (1|id), data = df_lm)
+Anova(model,test="F")
+model = lmer(pain ~ panasx_posaffect_score_pretask + (1|id), data = df_lm)
+Anova(model,test="F")
+model = lmer(money ~ panasx_posaffect_score_pretask +  (1|id), data = df_lm)
+Anova(model,test="F")
+
+model = lmer(pain ~ panasx_negaffect_score_posttask + (1|id), data = df_lm)
+Anova(model,test="F")
+model = lmer(money ~ panasx_negaffect_score_posttask +  (1|id), data = df_lm)
+Anova(model,test="F")
+model = lmer(pain ~ panasx_negaffect_score_pretask + (1|id), data = df_lm)
+Anova(model,test="F")
+model = lmer(money ~ panasx_negaffect_score_pretask +  (1|id), data = df_lm)
+Anova(model,test="F")
+
+
+
+
+```
+
+
 
