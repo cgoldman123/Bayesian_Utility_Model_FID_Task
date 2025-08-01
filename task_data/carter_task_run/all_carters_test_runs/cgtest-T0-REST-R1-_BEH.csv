@@ -1,0 +1,5 @@
+Administrator:,CG,Original File Name:,C:/TCAD_Temporary_Storage/functional_session/cgtest-T0-REST-R1-_BEH.csv,Time:,2025_Mar_11_1642,Parameter File:,C:\stimtool3\Rest\TCAD_REST_T0_R1_R.schedule,Event Codes:,[('INSTRUCT_ONSET', 1), ('TASK_ONSET', 2), ('TASK_END', 99)]
+trial_number,trial_type,event_code,absolute_time,response_time,response,result
+NA,NA,1,1.589999999396241e-05,NA,NA,NA
+NA,NA,2,31.275116500000024,31.27510060000003,NA,NA
+NA,NA,99,46.967950299999984,NA,NA,NA

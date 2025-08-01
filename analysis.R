@@ -5,9 +5,10 @@ library(data.table)
 library(plyr)
 library(gridExtra)
 
-# read data
+# Read data
 setwd("L://rsmith//lab-members//cgoldman//ironside_FID//LIBR_FID_scripts_CMG")
-data.DT <- data.table(read.csv("data/expanded_data_LIBR_5-28-25.csv"))
+data.DT <- data.table(read.csv("task_data/expanded_data_LIBR_5-28-25.csv"))
+# data.DT <- data.table(read.csv("task_data/carter_processed_data_7-9-25.csv"))
 # Rename trial column
 data.DT <- data.DT %>% dplyr::rename(trial = Trial)
 
@@ -20,24 +21,27 @@ data.DT[trial > 60 & trial <= 120, subject := paste0(subject, "_run_3_4")]
 data.DT[trial > 60 & trial <= 120, run := "run_3_4"]
 # Re-label trials of runs 3_4 (e.g., instead of trial 65, it would be trial 5 of run 3_4)
 data.DT[trial > 60, trial := trial - 60]
-# filter out anyone who only has 30 trials for runs_!_2 or runs_3_4
+# filter out anyone who only has 30 trials for runs_1_2 or runs_3_4
 data.DT = data.DT[, if (.N == 60) .SD, by = subject]
 
 
-
+# Create a new subject_id column
 data.DT$subject_id = data.DT$subject
+# Re-code the subject column to be a number for each participant
 data.DT$subject <- as.factor(as.numeric(factor(data.DT$subject_id)))
 # Create a mapping of subject IDs to numeric values
 subject_mapping <- unique(data.DT[, .(subject, subject_id)])
 data.DT$color = data.DT$PredatorSpeed
 data.DT[, color := factor(c("slow", "fast")[color],
                              levels = c("slow", "fast"))]
-# round FID to nearest integer
-data.DT$FID = round(data.DT$FID) # necessary for plots; also would be needed for mulitnomial logit model
+# Round FID to nearest integer
+# necessary for plots; also would be needed for mulitnomial logit model
+data.DT$FID = round(data.DT$FID) 
 
 # Even subject IDs received the "right" distribution for v1, but the "left" distribution for v2 (see Rayus' readme for explanation)
 # For the right distribution, the predator will travel an average of 5 units more before attacking (for both fast and slow predators),
 # making it slower on average (i.e., lower attack distances)
+# Create a "distribution" column that tracks if the session was "right" or "left"
 data.DT <- data.DT %>%
   mutate(
     # Extract the numeric part of the subject_id
@@ -58,10 +62,13 @@ data.DT <- data.DT %>%
 # Adjust the rows that were improperly labeled
 data.DT[subject_id == "BV250_ses-v1_run_1_2" | subject_id == "BV250_ses-v1_run_3_4", distribution:= "left"]
 data.DT[subject_id == "BR982_ses-v2_run_1_2" | subject_id == "BR982_ses-v2_run_3_4", distribution:= "right"]
+# Carter played his task run using the left distribution
+data.DT[subject_id == "CG000_ses-v1_run_1_2" | subject_id == "CG000_ses-v1_run_3_4", distribution:= "left"]
+
 
 # Verify that this distribution mapping is correct by looking through the json files that contain distribution info:
 library(jsonlite)
-# Define the base directory
+# Define the base directory where the JSON files are located
 base_dir <- "L:/NPC/DataSink/study-Ironside-2023-TCADPilot/data-original/functional_session"
 # Find all FID_balance.json files recursively
 json_files <- list.files(base_dir, pattern = "FID_balance\\.json$", recursive = TRUE, full.names = TRUE)
@@ -79,7 +86,7 @@ for (file in json_files) {
     
   }
 }
-# Compare to data.DT
+# Compare the distribution info from the extracted JSON files to the distribution info in data.DT
 distribution_info_DT <- data.DT %>%
   dplyr::mutate(subject_short = paste0(substr(subject_id, 1, 5), ifelse(session == 1, "_T0", "_T1"))) %>%
   dplyr::distinct(subject_short, session, distribution, .keep_all = TRUE) %>%
@@ -90,24 +97,26 @@ combined_distribution_dataframe <- dplyr::left_join(distribution_info_json, dist
 combined_distribution_dataframe$identical_dist = combined_distribution_dataframe$distribution == combined_distribution_dataframe$distribution_DT
 
 
-data.DT <- data.DT[FID > 0, ]  # discard those FID <= 0
+## Plot out behavior
+# discard those FID <= 0
+data.DT <- data.DT[FID > 0, ]  
 setkey(data.DT, subject, trial, color)
 
 
 # Plot FID ~ AD for all subjects
-fig.2 <- ggplot(data.DT, aes(x = trial, y = FID, color = color)) +
+fig.1 <- ggplot(data.DT, aes(x = trial, y = FID, color = color)) +
     geom_line(size = 1, alpha = .5) +
     facet_wrap( ~ subject) +
     ggtitle("FID ~ trial by subject")
-print(fig.2)
+print(fig.1)
 
 
 # Plot FID ~ AD for all subjects
-fig.5 <- ggplot(data.DT, aes(x = AD, y = FID, color = color)) +
+fig.2 <- ggplot(data.DT, aes(x = AD, y = FID, color = color)) +
     geom_point(size = 1, alpha = .5) +
     facet_wrap( ~ subject) +
     ggtitle("FID ~ AD by subject")
-print(fig.5)
+print(fig.2)
 
 # For one subject, plot the FID ~ Trial by condition (high/low reward/shock values)
 # Note that the line is truncated because the condition reward/shock=0 is not included in the plot.
@@ -150,6 +159,7 @@ print(fig_combined)
 
 # estimate p(escape under FID) for each (subject, color, trial)
 # p(escape) = p( AD < a * FID + b)
+# The constants below are from Song's original code. Perhaps we should adjust this?
 V.predator.fast <- 26
 V.predator.slow <- 26/7
 V.subject.run <- 1
@@ -161,13 +171,15 @@ a <- V.predator.fast / (V.predator.fast - V.predator.slow)
 b <- L * a * (1 - V.predator.slow / V.subject.run)
 
 # Bayesian player model
-likelihood.sigma.x <- 5.2 # standard deviation of observations
+likelihood.sigma.x <- 5.2 # standard deviation of observations based on what Song had here. Perhaps we should adjust this?
 prior.mean.mu <- 40 # prior mean for attack distance based on true mean of practice trials
 prior.sd.mu <- 12 # prior standard deviation for attack distance based on true sd of practice trials
 
 # estimate mean and variance of AD for each color from data
 # This should be the same for the left and right distributions
 # Across all participants
+# Remember that right distribution corresponds to slow!
+
 AD.estimates.left.all.pts <- data.DT[distribution == "left",  # AD sequence the same for all subjects
                                      .(mu = mean(AD), sigma = sd(AD)), by = .(subject_id, color)]
 # summarized
@@ -185,10 +197,9 @@ AD.estimates.right <- data.DT[distribution == "right",
 
 # BV250 has fast for both
 # BR982 has slow for both
-# Right corresponds to slow!
 
 
-# sequentially process trials for each (subject, color)
+# sequentially process trials for each (subject, color), getting the probability of escape on each trial based on FID
 .ProcessTrialsSequential <- function(FID, AD, trial) {
     stopifnot(!is.unsorted(trial))
     stopifnot(length(FID) == length(AD), length(trial) == length(AD))
@@ -210,26 +221,27 @@ AD.estimates.right <- data.DT[distribution == "right",
                  trial = trial[i]))
     }))
 }
-
+# Save results to results.DT
 results.DT <- data.DT[, as.list(.ProcessTrialsSequential(FID, AD, trial)),
                       by = .(subject, color)]
 setkey(results.DT, subject, trial, color)
 results.DT <- merge(data.DT, results.DT)
 
-# plot results
+# Plot the probability of escape for each subject
 fig <- ggplot(results.DT, aes(x = trial, y = p.escape, color = color)) +
     geom_point(size = 1, alpha = .5) +
     facet_wrap( ~ subject) +
     ggtitle("P(escape) by subject")
 print(fig)
 
+# Plot the probability of escape separated by predator type
 fig <- ggplot(results.DT, aes(x = trial, y = p.escape, color = color)) +
     geom_point(size = 1, alpha = .5) +
     facet_wrap( ~ color) +
     ggtitle("P(escape) by color")
 print(fig)
 
-# Filter to one subject who experienced the left distribution
+# Plot learning for one subject who experienced the left distribution
 fig <- ggplot(results.DT[distribution == "left" & numeric_id=="202",], aes(x = trial, y = posterior.AD.mean,
                               color = color)) +
     geom_point(size = 0.8, alpha = 0.8) +
@@ -242,7 +254,7 @@ fig <- ggplot(results.DT[distribution == "left" & numeric_id=="202",], aes(x = t
     theme_bw()
 print(fig + ggtitle("Left Distribution: Bayesian estimates for AD (95% C.I.)"))
 
-# Filter to one subject who experienced the right distribution
+# Plot learning for one subject who experienced the right distribution
 fig <- ggplot(results.DT[distribution == "right" & numeric_id=="202",], aes(x = trial, y = posterior.AD.mean,
                                                                            color = color)) +
   geom_point(size = 0.8, alpha = 0.8) +
@@ -255,13 +267,7 @@ fig <- ggplot(results.DT[distribution == "right" & numeric_id=="202",], aes(x = 
   theme_bw()
 print(fig + ggtitle("Right Distribution: Bayesian estimates for AD (95% C.I.)"))
 
-
-# Not the most helpful plot
-# print(fig +
-#           geom_point(aes(y = FID), color = "grey",
-#                        data = data.DT, size = 0.3, alpha = 0.5) +
-#           ggtitle("Bayesian estimates and FID"))
-
+# Plot FID ~ p(escape | FID) by subject
 fig <- ggplot(results.DT, aes(x = p.escape, y = FID, color = color)) +
     geom_point(size = 0.8, alpha = 0.5) +
     facet_wrap(~ subject, scales = "free_y") +
@@ -269,7 +275,7 @@ fig <- ggplot(results.DT, aes(x = p.escape, y = FID, color = color)) +
 print(fig)
 
 
-## Plot FID by reward level and shock level
+# Plot FID by reward level and shock level
 plot_df <- data.DT[, .(
   mean_FID = mean(FID, na.rm = TRUE),
   se_FID = sd(FID, na.rm = TRUE) / sqrt(.N)
@@ -279,7 +285,7 @@ plot_df <- data.DT[, .(
 plot_df[, RewardLevel := as.factor(RewardLevel)]
 plot_df[, ShockLevel := as.factor(ShockLevel)]
 
-# Plot
+# Plot mean FID by reward level and shock level
 ggplot(plot_df, aes(x = RewardLevel, y = mean_FID, fill = ShockLevel)) +
   geom_bar(stat = "identity", position = position_dodge(width = 0.8), width = 0.7) +
   geom_errorbar(aes(ymin = mean_FID - se_FID, ymax = mean_FID + se_FID),

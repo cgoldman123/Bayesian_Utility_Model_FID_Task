@@ -19,9 +19,9 @@ for i = 1:length(subfolders)
     subject_folder = subfolders(i).name;
     subdat.subject = strrep(subject_folder, 'sub-', '');
 
-    % if ~strcmp(subdat.subject,'BV156')
-    %     continue;
-    % end
+    if ~strcmp(subdat.subject,'CG000')
+        continue;
+    end
     
     
     % Loop through both ses-v1 and ses-v2 folders
@@ -137,6 +137,7 @@ all_data(contains(all_data.subject, 'MI999'), :) = []; % Now this should work
 
 
 % save results
-%writetable(all_data, 'L:\rsmith\lab-members\cgoldman\ironside_FID\LIBR_FID_scripts_CMG\data\expanded_data_LIBR_5-28-25.csv');
+% writetable(all_data, 'L:\rsmith\lab-members\cgoldman\ironside_FID\LIBR_FID_scripts_CMG\data\expanded_data_LIBR_5-28-25.csv');
+% writetable(all_data, 'L:\rsmith\lab-members\cgoldman\ironside_FID\LIBR_FID_scripts_CMG\task_data\carter_processed_data_7-9-25.csv');
 
 end

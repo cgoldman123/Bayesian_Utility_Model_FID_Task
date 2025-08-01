@@ -1,13 +1,13 @@
 library(proto)      # object-oriented support
 library(magrittr)   # %>% pipe operator
 
-# model the ideal observer as a Bayesian
-# using "proto" to describe the model as it fits cleanly with our case
+# This model allows us to learn the "attack distance" of each predator based on noisy observations
+# It learns as an ideal Bayesian observer would, accounting for both ucertainty in the current estimate and in observations.
 bayes.player.known.variance <- proto(expr = {
     x <- NULL  # no data observed initially
-    sigma.x <- 5 # data likelihood x ~ N(mu, sigma.x)
-    mean.mu <- 20 # prior (or old posterior) on mu: mu ~ N(mean.mu, sd.mu)
-    sd.mu <- 1
+    sigma.x <- 5.2 # data likelihood x ~ N(mu, sigma.x)
+    mean.mu <- 40 # prior (or old posterior) on mu: mu ~ N(mean.mu, sd.mu)
+    sd.mu <- 12
     # Get posterior
     Posterior <- function(.) {
         return(c(mean.mu = .$mean.mu, sd.mu = .$sd.mu))

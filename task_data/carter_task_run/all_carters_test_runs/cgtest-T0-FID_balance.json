@@ -1,0 +1,70 @@
+{
+    "balance": [
+        {
+            "sid": "cgtest_T0",
+            "set1": "S_O_F_P",
+            "set2": "S_W_F_YP",
+            "distribution": "right"
+        },
+        {
+            "sid": "cgtest_T0",
+            "set1": "S_O_F_P",
+            "set2": "S_W_F_YP",
+            "distribution": "right"
+        },
+        {
+            "sid": "cgtest_T0",
+            "set1": "S_W_F_YP",
+            "set2": "S_O_F_P",
+            "distribution": "right"
+        },
+        {
+            "sid": "cgtest_T0",
+            "set1": "S_O_F_P",
+            "set2": "S_W_F_YP",
+            "distribution": "right"
+        },
+        {
+            "sid": "cgtest_T0",
+            "set1": "S_W_F_YP",
+            "set2": "S_O_F_P",
+            "distribution": "right"
+        },
+        {
+            "sid": "cgtest_T0",
+            "set1": "S_W_F_YP",
+            "set2": "S_O_F_P",
+            "distribution": "right"
+        },
+        {
+            "sid": "cgtest_T0",
+            "set1": "S_W_F_YP",
+            "set2": "S_O_F_P",
+            "distribution": "right"
+        },
+        {
+            "sid": "cgtest_T0",
+            "set1": "S_W_F_YP",
+            "set2": "S_O_F_P",
+            "distribution": "right"
+        },
+        {
+            "sid": "cgtest_T0",
+            "set1": "S_W_F_YP",
+            "set2": "S_O_F_P",
+            "distribution": "right"
+        },
+        {
+            "sid": "cgtest_T0",
+            "set1": "S_O_F_P",
+            "set2": "S_W_F_YP",
+            "distribution": "right"
+        },
+        {
+            "sid": "cgtest_T0",
+            "set1": "S_O_F_P",
+            "set2": "S_W_F_YP",
+            "distribution": "right"
+        }
+    ]
+}

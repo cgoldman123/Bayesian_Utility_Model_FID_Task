@@ -18,8 +18,8 @@ library(car)
 library(tidyverse)
 
 
-task_data = read.csv("L:/rsmith/lab-members/cgoldman/ironside_FID/LIBR_FID_scripts_CMG/results/FID_merged_data_2025-05-29_11_23_19.csv")
-redcap_data = read.csv("L:/rsmith/lab-members/cgoldman/ironside_FID/LIBR_FID_scripts_CMG/TCAD_redcap_report_6-2-25.csv")
+task_data = read.csv("L:/rsmith/lab-members/cgoldman/ironside_FID/LIBR_FID_scripts_CMG/results/FID_merged_data_2025-07-10_08_54_18.csv")
+redcap_data = read.csv("L:/rsmith/lab-members/cgoldman/ironside_FID/LIBR_FID_scripts_CMG/redcap_data/TCAD_redcap_report_7-2-25.csv")
 
 
 # Pivot the task data so each subject (id) has one row, with session-specific columns
@@ -96,9 +96,17 @@ item_names <- paste0("iuc_", 1:27)
 df_scored <- df_scored[, !names(df_scored) %in% item_names]
 
 
+## TEPS Scoring based on "Gard DE, Gard MG, Kring AM, John OP. Anticipatory and consummatory components of the experience of pleasure: a scale development study. J Res Perso...
+df_scored = df_scored %>%
+  mutate(
+    teps_anticipatory_score = teps_18+teps_15+(7-teps_13)+teps_11+teps_10+teps_8+teps_6+
+                        teps_4+teps_16+teps_1,
+    teps_consummatory_score = teps_17+teps_14+teps_3+teps_2+teps_7+teps_5+teps_12+teps_9
+    ) 
 
-### Rename columns
-library(dplyr)
+item_names <- c(paste0("teps_", 1:18), "temporal_experience_of_pleasure_scale_teps_complete", "teps_assessed_at")
+df_scored <- df_scored[, !names(df_scored) %in% item_names]
+
 
 # Rename columns in df_scored: for columns that contain "vas_" but not "v2", replace "_1" with "_pretask"
 df_scored <- df_scored %>%
@@ -206,17 +214,17 @@ wide_data %>% filter(!is.na(pain_session_1_run_1_2) & !is.na(pain_session_1_run_
 complete_ids = wide_data %>% filter(!is.na(pain_session_1_run_1_2) & !is.na(pain_session_1_run_3_4) & !is.na(pain_session_2_run_1_2) & !is.na(pain_session_2_run_3_4)) %>% pull(id)
 
 # Get complete data
-data_complete = data %>% filter(id %in% complete_ids)
+data_complete = task_data %>% filter(id %in% complete_ids)
 wide_data_complete = wide_data %>% filter(id %in% complete_ids)
 
 
 # Fit a linear mixed model with pain as the dependent variable and subject ID as a random effect
-lmm_model <- lmer(pain ~ (1 | id), data = data, REML = TRUE)
+lmm_model <- lmer(pain ~ (1 | id), data = task_data, REML = TRUE)
 # Compute ICC
 icc_result <- performance::icc(lmm_model)
 summary(icc_result)
 # Fit a linear mixed model with pain as the dependent variable and subject ID as a random effect
-lmm_model <- lmer(money ~ (1 | id), data = data, REML = TRUE)
+lmm_model <- lmer(money ~ (1 | id), data = task_data, REML = TRUE)
 # Compute ICC
 icc_result <- performance::icc(lmm_model)
 summary(icc_result)

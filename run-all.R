@@ -1,3 +1,4 @@
+# Note: Make plot window big before running; helps with preventing R Studio from Crashing
 rm(list = ls())
 setwd("L://rsmith//lab-members//cgoldman//ironside_FID//LIBR_FID_scripts_CMG")
 
@@ -22,10 +23,7 @@ merged_data$run <- (substr(merged_data$subject_id, 18, 20))
 # Save merged data file
 # write.csv(merged_data, paste0("L://rsmith/lab-members/cgoldman/ironside_FID/LIBR_FID_scripts_CMG/results/FID_merged_data",format(Sys.time(), "_%Y-%m-%d_%H_%M_%S"),".csv"))
 
-# Optionally load in most recent merged data file
-folder <- "L://rsmith/lab-members/cgoldman/ironside_FID/LIBR_FID_scripts_CMG/results/"
-files <- list.files(folder, pattern = "merged_data.*\\.csv$", full.names = TRUE)
-merged_data <- read.csv(files[which.max(file.info(files)$mtime)])
+
 
 # These notes are based on a discussion with Kyle Goldman. I adjusted my data processing pipeline on 5-28-25 to ensure I was not missing anything.
 # Subjects. Note that if there are no notes, data is good
@@ -51,9 +49,6 @@ merged_data <- read.csv(files[which.max(file.info(files)$mtime)])
 # BV227
 # DONT INCLUDE BW730; not in the study
 
-# Don't move these libraries to the top of the file
-library(tidyr)
-library(dplyr)
 
 
 

@@ -1,0 +1,9 @@
+Administrator:,CG,Original File Name:,C:/TCAD_Temporary_Storage/functional_session/cgtest-T0-_FID-R3-_BEH.csv,Time:,2025_Mar_11_1654,Parameter File:,study-FID_task-DR_run-3.params,Event Codes:,[('INSTRUCT_ONSET', 1), ('TASK_ONSET', 2), ('PRACTICE_ONSET', 3), ('MAIN_ONSET', 4), ('BLOCK_ONSET', 5), ('TRIAL_ONSET', 6), ('IMAGE_ONSET', 7), ('CHOICE_ONSET', 8), ('PRED_LOC', 9), ('CHOICE', 10), ('CHASE_ONSET', 11), ('OUTCOME_ONSET', 12), ('RATING_ONSET', 13), ('RATING_CHANGE', 14), ('FINAL_RATING', 15), ('FIXATION_ONSET', 16), ('SHOCK_ONSET', 17), ('FINAL_OUTCOME', 18), ('TASK_END', 99)]
+trial_number,trial_type,event_code,absolute_time,response_time,response,result
+NA,NA,1,9.600000112186535e-06,NA,NA,NA
+NA,NA,2,34.62168900000006,34.62167939999995,NA,NA
+0,0_F,16,34.624111300000095,NA,NA,10000.0
+0,0_F,5,47.4531922000001,NA,NA,0_0
+0,0_F,6,48.62282660000005,NA,NA,yellow_pastel
+0,0_F,7,49.60457110000016,NA,NA,NA
+NA,NA,99,53.25610770000003,NA,NA,NA

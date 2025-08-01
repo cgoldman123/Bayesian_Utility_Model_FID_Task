@@ -1,0 +1,28 @@
+{
+    "balance": [
+        {
+            "sid": "cgtest_7-1-25_T0",
+            "set1": "S_BR_F_G",
+            "set2": "S_PE_F_YB",
+            "distribution": "left"
+        },
+        {
+            "sid": "cgtest_7-1-25_T0",
+            "set1": "S_PE_F_YB",
+            "set2": "S_BR_F_G",
+            "distribution": "left"
+        },
+        {
+            "sid": "cgtest_7-1-25_T0",
+            "set1": "S_PE_F_YB",
+            "set2": "S_BR_F_G",
+            "distribution": "left"
+        },
+        {
+            "sid": "cgtest_7-1-25_T0",
+            "set1": "S_BR_F_G",
+            "set2": "S_PE_F_YB",
+            "distribution": "left"
+        }
+    ]
+}

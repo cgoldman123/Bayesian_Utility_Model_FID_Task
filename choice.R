@@ -5,7 +5,7 @@ library(mlogit) # note that an older version of mlogit must be used; remotes::in
 
 # choices.data.DT <- merge(data.DT[FID>0], bayesian.utility.DT)
 
-## CMG: instead of using one subjects utility estimations, use the bayesian utility for each subject
+## CMG: Instead of using one subjects utility estimations, use the bayesian utility for each subject
 # given what that particular subject saw ---> Big.bayesian.utility.DT
 choices.data.DT <- merge(data.DT[FID>0], Big.bayesian.utility.DT)
 

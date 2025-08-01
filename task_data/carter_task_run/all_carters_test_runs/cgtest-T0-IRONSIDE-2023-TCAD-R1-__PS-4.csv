@@ -1,0 +1,3 @@
+Administrator:,CG,Original File Name:,C:/TCAD_Temporary_Storage/functional_session/cgtest-T0-IRONSIDE-2023-TCAD-R1-__PS-4.csv,Time:,2025_Mar_11_1704,Parameter File:,C:\stimtool3\ParameterSelector\study-IRONSIDE-2023-TCAD_task-PS_session-functional.schedule,Event Codes:,[('RESPONSE', 1), ('TASK_END', 99)]
+trial_number,trial_type,event_code,absolute_time,response_time,response,result
+NA,NA,99,2.839950900000076,NA,NA,NA

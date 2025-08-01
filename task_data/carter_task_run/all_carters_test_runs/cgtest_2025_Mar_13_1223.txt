@@ -1,0 +1,75 @@
+{}
+run
+ImpedanceChecks.QL
+{'run': 'study-IRONSIDE-2023-TCAD_task-PS_session-functional.schedule'}
+run_id
+IRONSIDE-2023-TCAD-R1-__PS
+study-IRONSIDE-2023-TCAD_task-PS_session-functional.params
+{'Session': {'T0': {'session_id': 'T0'}, 'T1': {'session_id': 'T1'}}, 'Hand-Set': {'RIGHT-FID-SCAN': {'scan': 'True', 'left': '1', 'right': '2', 'select': '3', 'up': '3', 'down': '4', 'joy_forward': 2, 'joy_backward': 0, 'handedness': 'right', 'order': ["Parameter Selector:run='study-IRONSIDE-2023-TCAD_task-PS_session-functional.schedule'", "FlightInitiationDistance:run='study-FID_task-DR_shock_test.schedule'", "Rest:run='TCAD_REST_T0_R1_R.schedule'", "FlightInitiationDistance:run='study-FID_task-DR_run-1.schedule'", "FlightInitiationDistance:run='study-FID_task-DR_run-2.schedule'", "FlightInitiationDistance:run='study-FID_task-DR_run-3.schedule'", "FlightInitiationDistance:run='study-FID_task-DR_run-4.schedule'", "Data Mover:run='TCAD_FUNC_TX.schedule'"]}, 'LEFT-FID-SCAN': {'scan': 'True', 'left': '2', 'right': '1', 'select': '3', 'up': '2', 'down': '1', 'joy_forward': 2, 'joy_backward': 0, 'handedness': 'left', 'order': ["Parameter Selector:run='study-IRONSIDE-2023-TCAD_task-PS_session-functional.schedule'", "FlightInitiationDistance:run='study-FID_task-DR_shock_test.schedule'", "Rest:run='TCAD_REST_T0_R1_L.schedule'", "FlightInitiationDistance:run='study-FID_task-DR_run-1.schedule'", "FlightInitiationDistance:run='study-FID_task-DR_run-2.schedule'", "FlightInitiationDistance:run='study-FID_task-DR_run-3.schedule'", "FlightInitiationDistance:run='study-FID_task-DR_run-4.schedule'", "Data Mover:run='TCAD_FUNC_TX.schedule'"]}}}
+{'SID': 'cgtest', 'raID': 'CG', 'up': '3', 'down': '4', 'left': '1', 'right': '2', 'select': '3', 'scan': False, 'record_video': False, 'signal_parallel': False, 'signal_serial': False, 'auto_advance': True, 'parallel_port_address': 12288, 'serial_port_address': 'COM1', 'baud_rate': 115200, 'screen_x': 1024, 'screen_y': 768, 'monitor_width_cm': 51.75, 'monitor_distance_cm': 60, 'monitor_width_pix': 1920, 'monitor_height_pix': 1200, 'instruction_volume': 0.5, 'allow_instructions_back': False, 'output_dir': 'C:/TCAD_Temporary_Storage/functional_session/', 'network_output_dir': 'T:/data/original_data/calibration_parameters/', 'last_subject': 'cgtest', 'last_admin': 'CG', 'redirect_output': True, 'session_id': 'T0', 'screen_number': 1, 'signal_triggerbox': False, 'triggerbox_port': 'COM3', 'admin_id': 'CG', 'joystick': True, 'joy_forward': 2, 'joy_backward': 0, 'order': ["Parameter Selector:run='study-IRONSIDE-2023-TCAD_task-PS_session-functional.schedule'"]}
+['T0', 'RIGHT-FID-SCAN']
+{'SID': 'cgtest', 'raID': 'CG', 'up': '3', 'down': '4', 'left': '1', 'right': '2', 'select': '3', 'scan': 'True', 'record_video': False, 'signal_parallel': False, 'signal_serial': False, 'auto_advance': True, 'parallel_port_address': 12288, 'serial_port_address': 'COM1', 'baud_rate': 115200, 'screen_x': 1024, 'screen_y': 768, 'monitor_width_cm': 51.75, 'monitor_distance_cm': 60, 'monitor_width_pix': 1920, 'monitor_height_pix': 1200, 'instruction_volume': 0.5, 'allow_instructions_back': False, 'output_dir': 'C:/TCAD_Temporary_Storage/functional_session/', 'network_output_dir': 'T:/data/original_data/calibration_parameters/', 'last_subject': 'cgtest', 'last_admin': 'CG', 'redirect_output': True, 'session_id': 'T0', 'screen_number': 1, 'signal_triggerbox': False, 'triggerbox_port': 'COM3', 'admin_id': 'CG', 'joystick': True, 'joy_forward': 2, 'joy_backward': 0, 'order': ["Parameter Selector:run='study-IRONSIDE-2023-TCAD_task-PS_session-functional.schedule'", "FlightInitiationDistance:run='study-FID_task-DR_shock_test.schedule'", "Rest:run='TCAD_REST_T0_R1_R.schedule'", "FlightInitiationDistance:run='study-FID_task-DR_run-1.schedule'", "FlightInitiationDistance:run='study-FID_task-DR_run-2.schedule'", "FlightInitiationDistance:run='study-FID_task-DR_run-3.schedule'", "FlightInitiationDistance:run='study-FID_task-DR_run-4.schedule'", "Data Mover:run='TCAD_FUNC_TX.schedule'"], 'handedness': 'right'}
+{}
+run
+T
+{'run': 'T', 'practice': False, 'random_run': False, 'frame_time': 0.08335}
+instruction_schedule
+IA_instruct_scheduleS_R.csv
+{'run': 'study-FID_task-DR_shock_test.schedule', 'practice': False, 'random_run': False, 'frame_time': 0.08335, 'instruction_schedule': 'IA_instruct_scheduleS_R.csv', 'left': '1', 'right': '2', 'up': '3', 'down': '4', 'select': '3'}
+run_id
+FID_SHOCK_TEST
+{'run': 'study-FID_task-DR_shock_test.schedule', 'practice': False, 'random_run': False, 'frame_time': 0.08335, 'instruction_schedule': 'IA_instruct_scheduleS_R.csv', 'left': '1', 'right': '2', 'up': '3', 'down': '4', 'select': '3', 'run_id': 'FID_SHOCK_TEST'}
+task_name
+FID
+{'run': 'study-FID_task-DR_shock_test.schedule', 'practice': False, 'random_run': False, 'frame_time': 0.08335, 'instruction_schedule': 'IA_instruct_scheduleS_R.csv', 'left': '1', 'right': '2', 'up': '3', 'down': '4', 'select': '3', 'run_id': 'FID_SHOCK_TEST', 'task_name': 'FID'}
+param_file
+__IA-RX-PARA.txt
+{'run': 'study-FID_task-DR_shock_test.schedule', 'practice': False, 'random_run': False, 'frame_time': 0.08335, 'instruction_schedule': 'IA_instruct_scheduleS_R.csv', 'left': '1', 'right': '2', 'up': '3', 'down': '4', 'select': '3', 'run_id': 'FID_SHOCK_TEST', 'task_name': 'FID', 'param_file': '__IA-RX-PARA.txt'}
+instruction_schedule
+fid_instruct_schedule_ST.csv
+{'run': 'study-FID_task-DR_shock_test.schedule', 'practice': False, 'random_run': False, 'frame_time': 0.08335, 'instruction_schedule': 'fid_instruct_schedule_ST.csv', 'left': '1', 'right': '2', 'up': '3', 'down': '4', 'select': '3', 'run_id': 'FID_SHOCK_TEST', 'task_name': 'FID', 'param_file': '__IA-RX-PARA.txt'}
+color_map
+S_O_F_P-S_W_F_YP
+{'run': 'study-FID_task-DR_shock_test.schedule', 'practice': False, 'random_run': False, 'frame_time': 0.08335, 'instruction_schedule': 'fid_instruct_schedule_ST.csv', 'left': '1', 'right': '2', 'up': '3', 'down': '4', 'select': '3', 'run_id': 'FID_SHOCK_TEST', 'task_name': 'FID', 'param_file': '__IA-RX-PARA.txt', 'color_map': 'S_O_F_P-S_W_F_YP'}
+color_map2
+S_BR_F_G-S_PE_F_YB
+{'run': 'study-FID_task-DR_shock_test.schedule', 'practice': False, 'random_run': False, 'frame_time': 0.08335, 'instruction_schedule': 'fid_instruct_schedule_ST.csv', 'left': '1', 'right': '2', 'up': '3', 'down': '4', 'select': '3', 'run_id': 'FID_SHOCK_TEST', 'task_name': 'FID', 'param_file': '__IA-RX-PARA.txt', 'color_map': 'S_O_F_P-S_W_F_YP', 'color_map2': 'S_BR_F_G-S_PE_F_YB', 'block_length': 6, 'rating_duration': 6.0, 'pred_display_duration': 2.0, 'runway_display_duration': 2.0}
+speed_schedule
+random
+
+35.3253 	WARNING 	We strongly recommend you activate the PTB sound engine in PsychoPy prefs as the preferred audio engine. Its timing is vastly superior. Your prefs are currently set to use ['pyo', 'pygame'] (in that order).
+162.8194 	WARNING 	Monitor specification not found. Creating a temporary one...
+162.8444 	WARNING 	Requested an unavailable screen number - using first available.
+{}
+run
+T
+{'run': 'T', 'practice': False, 'random_run': False, 'frame_time': 0.08335}
+instruction_schedule
+IA_instruct_scheduleS_R.csv
+{'run': 'study-FID_task-DR_run-1.schedule', 'practice': False, 'random_run': False, 'frame_time': 0.08335, 'instruction_schedule': 'IA_instruct_scheduleS_R.csv', 'left': '1', 'right': '2', 'up': '3', 'down': '4', 'select': '3'}
+run_id
+_FID-R1-_BEH
+{'run': 'study-FID_task-DR_run-1.schedule', 'practice': False, 'random_run': False, 'frame_time': 0.08335, 'instruction_schedule': 'IA_instruct_scheduleS_R.csv', 'left': '1', 'right': '2', 'up': '3', 'down': '4', 'select': '3', 'run_id': '_FID-R1-_BEH'}
+task_name
+FID
+{'run': 'study-FID_task-DR_run-1.schedule', 'practice': False, 'random_run': False, 'frame_time': 0.08335, 'instruction_schedule': 'IA_instruct_scheduleS_R.csv', 'left': '1', 'right': '2', 'up': '3', 'down': '4', 'select': '3', 'run_id': '_FID-R1-_BEH', 'task_name': 'FID'}
+param_file
+__IA-RX-PARA.txt
+{'run': 'study-FID_task-DR_run-1.schedule', 'practice': False, 'random_run': False, 'frame_time': 0.08335, 'instruction_schedule': 'IA_instruct_scheduleS_R.csv', 'left': '1', 'right': '2', 'up': '3', 'down': '4', 'select': '3', 'run_id': '_FID-R1-_BEH', 'task_name': 'FID', 'param_file': '__IA-RX-PARA.txt'}
+instruction_schedule
+fid_instruct_schedule_R.csv
+{'run': 'study-FID_task-DR_run-1.schedule', 'practice': False, 'random_run': False, 'frame_time': 0.08335, 'instruction_schedule': 'fid_instruct_schedule_R.csv', 'left': '1', 'right': '2', 'up': '3', 'down': '4', 'select': '3', 'run_id': '_FID-R1-_BEH', 'task_name': 'FID', 'param_file': '__IA-RX-PARA.txt'}
+color_map
+S_O_F_P-S_W_F_YP
+{'run': 'study-FID_task-DR_run-1.schedule', 'practice': False, 'random_run': False, 'frame_time': 0.08335, 'instruction_schedule': 'fid_instruct_schedule_R.csv', 'left': '1', 'right': '2', 'up': '3', 'down': '4', 'select': '3', 'run_id': '_FID-R1-_BEH', 'task_name': 'FID', 'param_file': '__IA-RX-PARA.txt', 'color_map': 'S_O_F_P-S_W_F_YP'}
+color_map2
+S_BR_F_G-S_PE_F_YB
+{'run': 'study-FID_task-DR_run-1.schedule', 'practice': False, 'random_run': False, 'frame_time': 0.08335, 'instruction_schedule': 'fid_instruct_schedule_R.csv', 'left': '1', 'right': '2', 'up': '3', 'down': '4', 'select': '3', 'run_id': '_FID-R1-_BEH', 'task_name': 'FID', 'param_file': '__IA-RX-PARA.txt', 'color_map': 'S_O_F_P-S_W_F_YP', 'color_map2': 'S_BR_F_G-S_PE_F_YB', 'block_length': 6, 'rating_duration': 6.0, 'pred_display_duration': 2.0, 'runway_display_duration': 2.0}
+speed_schedule
+random
+
+[[967.0, 1571.0, 908.0], [967.0, 1571.0, 908.0], [733.0, 1290.0, 953.0], [855.0, 1110.0, 563.0], [733.0, 1290.0, 953.0], [855.0, 1110.0, 563.0], [675.0, 1008.0, 957.0], [967.0, 1571.0, 908.0], [872.0, 1511.0, 816.0], [1439.0, 1318.0, 548.0], [872.0, 1511.0, 816.0], [1439.0, 1318.0, 548.0], [1206.0, 1433.0, 639.0], [1386.0, 1193.0, 773.0], [867.0, 1278.0, 979.0], [867.0, 1278.0, 979.0], [867.0, 1278.0, 979.0], [867.0, 1278.0, 979.0], [967.0, 1571.0, 908.0], [967.0, 1571.0, 908.0], [733.0, 1290.0, 953.0], [855.0, 1110.0, 563.0], [733.0, 1290.0, 953.0], [855.0, 1110.0, 563.0], [675.0, 1008.0, 957.0], [967.0, 1571.0, 908.0], [872.0, 1511.0, 816.0], [1439.0, 1318.0, 548.0], [872.0, 1511.0, 816.0], [1439.0, 1318.0, 548.0]]
+['0_F', '0_S', '0_S', '0_F', '0_S', '0_F', '1_S', '1_F', '1_S', '1_F', '1_S', '1_F', '2_S', '2_F', '2_S', '2_F', '2_F', '2_S', '3_F', '3_S', '3_F', '3_S', '3_F', '3_S', '4_F', '4_S', '4_S', '4_F', '4_S', '4_F']
+[]
+[[967.0, 967.0, 733.0, 855.0, 733.0, 855.0, 675.0, 967.0, 872.0, 1439.0, 872.0, 1439.0, 1206.0, 1386.0, 867.0, 867.0, 867.0, 867.0, 967.0, 967.0, 733.0, 855.0, 733.0, 855.0, 675.0, 967.0, 872.0, 1439.0, 872.0, 1439.0], [1571.0, 1571.0, 1290.0, 1110.0, 1290.0, 1110.0, 1008.0, 1571.0, 1511.0, 1318.0, 1511.0, 1318.0, 1433.0, 1193.0, 1278.0, 1278.0, 1278.0, 1278.0, 1571.0, 1571.0, 1290.0, 1110.0, 1290.0, 1110.0, 1008.0, 1571.0, 1511.0, 1318.0, 1511.0, 1318.0], [908.0, 908.0, 953.0, 563.0, 953.0, 563.0, 957.0, 908.0, 816.0, 548.0, 816.0, 548.0, 639.0, 773.0, 979.0, 979.0, 979.0, 979.0, 908.0, 908.0, 953.0, 563.0, 953.0, 563.0, 957.0, 908.0, 816.0, 548.0, 816.0, 548.0]]
+[['11', '54', '38', '9', '38', '9', '34', '15', '26', '73', '26', '73', '34', '21', '39', '39', '39', '39', '11', '54', '38', '9', '38', '9', '34', '15', '26', '73', '26', '73']]

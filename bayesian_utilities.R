@@ -1,6 +1,8 @@
+# Create a vector storing possible FID choices
 FID.choices <- 1:81
 data.DT[FID < 1, FID := 0]
 
+# Function to calculate the utility of pain based on the probability of escape
 Util.Pain <- function(.P.Escape) {
     .U <- function(FID) {
         p.escape <- sapply(FID, .P.Escape)
@@ -9,6 +11,8 @@ Util.Pain <- function(.P.Escape) {
     return(.U)
 }
 
+# Function to calculate the utility of money based on the probability of escape and the reward function,
+# determining how much money a person would receive for a given FID/predator type
 Util.Money <- function(.P.Escape, .Money) {
     .U <- function(FID) {
         money <- sapply(FID, .Money)
@@ -21,8 +25,7 @@ Util.Money <- function(.P.Escape, .Money) {
     return(.U)
 }
 
-
-## CMG: I took away the .money argument because we assign the .money within the function
+# This table estimates the "pain" and "money" for each FID on each trial based on the probability of escape and reward function
 .MakeUtilityTable <- function(distribution, .color, AD, trial, FID.choices) {
     stopifnot(!is.unsorted(trial), length(trial) == length(AD))
     # a new object
@@ -47,7 +50,8 @@ Util.Money <- function(.P.Escape, .Money) {
         } else if (.color == "slow" & distribution[i] == "right") {
           .Money <- Money.Exponential.Slow.Right
         }
-          
+        
+
         .Util.Pain <- Util.Pain(. %>% this.bayes$P.Escape(a = a, b = b))
         .Util.Money <- Util.Money(. %>% this.bayes$P.Escape(a = a, b = b),
                                   .Money)
@@ -67,14 +71,14 @@ Util.Money <- function(.P.Escape, .Money) {
     return(util.table)
 }
 
-
+# Test this out on one subject. We'll use these results in a plot.
 bayesian.utility.DT <- data.DT[subject == "22",
                            as.list(.MakeUtilityTable(distribution, color, AD, trial,
                                                          FID.choices)),
                                by = color]
 
 
-## CMG: instead of using one subjects utility estimations (bayesian.utility.DT), calculate the utility for each subject
+#Instead of using one subjects utility estimations (bayesian.utility.DT), calculate the utility for each subject
 # given what that particular subject saw ---> Big.bayesian.utility.DT
 Big.bayesian.utility.DT <- list()
 subjects = levels(as.factor(data.DT$subject))
