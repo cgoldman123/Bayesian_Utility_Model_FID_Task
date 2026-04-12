@@ -5,9 +5,13 @@ library(data.table)
 library(plyr)
 library(gridExtra)
 
+plot_all <- FALSE
+verify_distribution_mapping_flag <- FALSE
+
+
 # Read data
-setwd("L://rsmith//lab-members//cgoldman//ironside_FID//LIBR_FID_scripts_CMG")
-data.DT <- data.table(read.csv("task_data/expanded_data_LIBR_5-28-25.csv"))
+# setwd("L://rsmith//lab-members//cgoldman//ironside_FID//LIBR_FID_scripts_CMG")
+data.DT <- data.table(read.csv("task_data/expanded_data_LIBR_4-12-26.csv"))
 # data.DT <- data.table(read.csv("task_data/carter_processed_data_7-9-25.csv"))
 # Rename trial column
 data.DT <- data.DT %>% dplyr::rename(trial = Trial)
@@ -67,56 +71,34 @@ data.DT[subject_id == "CG000_ses-v1_run_1_2" | subject_id == "CG000_ses-v1_run_3
 
 
 # Verify that this distribution mapping is correct by looking through the json files that contain distribution info:
-library(jsonlite)
-# Define the base directory where the JSON files are located
-base_dir <- "L:/NPC/DataSink/study-Ironside-2023-TCADPilot/data-original/functional_session"
-# Find all FID_balance.json files recursively
-json_files <- list.files(base_dir, pattern = "FID_balance\\.json$", recursive = TRUE, full.names = TRUE)
-distribution_info_json <- data.frame(id = character(), distribution = character(), stringsAsFactors = FALSE)
-# Loop through each file and extract the needed information
-for (file in json_files) {
-  json_data <- fromJSON(file)
-  if (!is.null(json_data$balance)) {
-    balance_entries <- json_data$balance
-    distribution_info_json <- dplyr::bind_rows(distribution_info_json, data.frame(
-      id = balance_entries$sid,
-      distribution = balance_entries$distribution,
-      stringsAsFactors = FALSE
-    ))
-    
-  }
+if (verify_distribution_mapping_flag) {
+  source("verify_distribution_mapping.R")
+  distribution_mapping_results <- verify_distribution_mapping(data.DT)
+  # Print the comparison results so the user can verify the computed distribution labels.
+  print(head(distribution_mapping_results, 20))
 }
-# Compare the distribution info from the extracted JSON files to the distribution info in data.DT
-distribution_info_DT <- data.DT %>%
-  dplyr::mutate(subject_short = paste0(substr(subject_id, 1, 5), ifelse(session == 1, "_T0", "_T1"))) %>%
-  dplyr::distinct(subject_short, session, distribution, .keep_all = TRUE) %>%
-  dplyr::select(subject_short, distribution) %>%
-  dplyr::rename(distribution_DT = distribution)
-  
-combined_distribution_dataframe <- dplyr::left_join(distribution_info_json, distribution_info_DT, by = c("id" = "subject_short"))
-combined_distribution_dataframe$identical_dist = combined_distribution_dataframe$distribution == combined_distribution_dataframe$distribution_DT
 
 
 ## Plot out behavior
-# discard those FID <= 0
-data.DT <- data.DT[FID > 0, ]  
+# Reassign negative FID to 0
+data.DT[FID < 0, FID := 0]
 setkey(data.DT, subject, trial, color)
 
 
 # Plot FID ~ AD for all subjects
 fig.1 <- ggplot(data.DT, aes(x = trial, y = FID, color = color)) +
     geom_line(size = 1, alpha = .5) +
-    facet_wrap( ~ subject) +
-    ggtitle("FID ~ trial by subject")
-print(fig.1)
+    facet_wrap( ~ subject_id) +
+    ggtitle("FID ~ trial by subject and run")
+if (plot_all) print(fig.1)
 
 
 # Plot FID ~ AD for all subjects
 fig.2 <- ggplot(data.DT, aes(x = AD, y = FID, color = color)) +
     geom_point(size = 1, alpha = .5) +
-    facet_wrap( ~ subject) +
-    ggtitle("FID ~ AD by subject")
-print(fig.2)
+    facet_wrap( ~ subject_id) +
+    ggtitle("FID ~ AD by subject and run")
+if (plot_all) print(fig.2)
 
 # For one subject, plot the FID ~ Trial by condition (high/low reward/shock values)
 # Note that the line is truncated because the condition reward/shock=0 is not included in the plot.
@@ -152,7 +134,7 @@ fig_combined <- ggplot(plot_data, aes(x = trial_new, y = FID, color = color)) +
   ) +
   theme_minimal()
 
-print(fig_combined)
+if (plot_all) print(fig_combined)
 
 
 
@@ -230,16 +212,16 @@ results.DT <- merge(data.DT, results.DT)
 # Plot the probability of escape for each subject
 fig <- ggplot(results.DT, aes(x = trial, y = p.escape, color = color)) +
     geom_point(size = 1, alpha = .5) +
-    facet_wrap( ~ subject) +
-    ggtitle("P(escape) by subject")
-print(fig)
+    facet_wrap( ~ subject_id) +
+    ggtitle("P(escape) by subject/session")
+if (plot_all) print(fig)
 
 # Plot the probability of escape separated by predator type
 fig <- ggplot(results.DT, aes(x = trial, y = p.escape, color = color)) +
     geom_point(size = 1, alpha = .5) +
     facet_wrap( ~ color) +
     ggtitle("P(escape) by color")
-print(fig)
+if (plot_all) print(fig)
 
 # Plot learning for one subject who experienced the left distribution
 fig <- ggplot(results.DT[distribution == "left" & numeric_id=="202",], aes(x = trial, y = posterior.AD.mean,
@@ -252,7 +234,7 @@ fig <- ggplot(results.DT[distribution == "left" & numeric_id=="202",], aes(x = t
   scale_colour_manual(values = c("dodgerblue2", "red")) +
     facet_wrap( ~ color, scales = "free_y") +
     theme_bw()
-print(fig + ggtitle("Left Distribution: Bayesian estimates for AD (95% C.I.)"))
+if (plot_all) print(fig + ggtitle("Left Distribution: Bayesian estimates for AD (95% C.I.)"))
 
 # Plot learning for one subject who experienced the right distribution
 fig <- ggplot(results.DT[distribution == "right" & numeric_id=="202",], aes(x = trial, y = posterior.AD.mean,
@@ -265,14 +247,14 @@ fig <- ggplot(results.DT[distribution == "right" & numeric_id=="202",], aes(x = 
   scale_colour_manual(values = c("dodgerblue2", "red")) +
   facet_wrap( ~ color, scales = "free_y") +
   theme_bw()
-print(fig + ggtitle("Right Distribution: Bayesian estimates for AD (95% C.I.)"))
+if (plot_all) print(fig + ggtitle("Right Distribution: Bayesian estimates for AD (95% C.I.)"))
 
 # Plot FID ~ p(escape | FID) by subject
 fig <- ggplot(results.DT, aes(x = p.escape, y = FID, color = color)) +
     geom_point(size = 0.8, alpha = 0.5) +
-    facet_wrap(~ subject, scales = "free_y") +
+    facet_wrap(~ subject_id, scales = "free_y") +
     ggtitle("FID ~ p(escape | FID) by subject")
-print(fig)
+if (plot_all) print(fig)
 
 
 # Plot FID by reward level and shock level
@@ -286,16 +268,21 @@ plot_df[, RewardLevel := as.factor(RewardLevel)]
 plot_df[, ShockLevel := as.factor(ShockLevel)]
 
 # Plot mean FID by reward level and shock level
-ggplot(plot_df, aes(x = RewardLevel, y = mean_FID, fill = ShockLevel)) +
-  geom_bar(stat = "identity", position = position_dodge(width = 0.8), width = 0.7) +
-  geom_errorbar(aes(ymin = mean_FID - se_FID, ymax = mean_FID + se_FID),
-                position = position_dodge(width = 0.8), width = 0.2) +
-  labs(x = "Reward Level", y = "Mean FID ± SE", fill = "Shock Level") +
-  theme_minimal()
+if (plot_all) {
+  fig <- ggplot(plot_df, aes(x = RewardLevel, y = mean_FID, fill = ShockLevel)) +
+    geom_bar(stat = "identity", position = position_dodge(width = 0.8), width = 0.7) +
+    geom_errorbar(aes(ymin = mean_FID - se_FID, ymax = mean_FID + se_FID),
+                  position = position_dodge(width = 0.8), width = 0.2) +
+    labs(x = "Reward Level", y = "Mean FID ± SE", fill = "Shock Level") +
+    theme_minimal()
+  print(fig)
+}
 
 
 # Get the estimated probability of escape under various FID based on a person's estimate
 # of the attack distance
-source("plot_distribution.R")
+if (plot_all) {
+  source("plot_distribution.R")
+}
 
 
