@@ -1,9 +1,18 @@
 function process_FID_data()
 clear all
 dbstop if error;
+test=0;
 
 % Define the base directory
-base_dir = 'L:\NPC\studies\Ironside-2023-TCADPilot';
+if ispc
+    base_dir = 'L:\NPC\studies\Ironside-2023-TCADPilot';
+else
+    base_dir = '/media/labs/NPC/studies/Ironside-2023-TCADPilot';
+end
+
+if test
+    base_dir = '/media/labs/NPC/studies/Ironside-2023-TCAD';
+end
 % Get a list of all subfolders starting with 'sub-'
 subfolders = dir(fullfile(base_dir, 'sub-*'));
 
@@ -19,13 +28,18 @@ for i = 1:length(subfolders)
     subject_folder = subfolders(i).name;
     subdat.subject = strrep(subject_folder, 'sub-', '');
 
-    if ~strcmp(subdat.subject,'CG000')
+    if test && ~strcmp(subdat.subject,'CG000')
         continue;
     end
     
     
     % Loop through both ses-v1 and ses-v2 folders
-    for ses = {'ses-v1', 'ses-v2'}
+    if test
+        sessions = {'ses-V1'};
+    else
+        sessions = {'ses-v1','ses-v2'};
+    end
+    for ses = sessions
         % flag for valid subject data
         valid_task_run = 1;
         func_folder = fullfile(base_dir, subject_folder, ses{1}, 'func');
@@ -38,7 +52,11 @@ for i = 1:length(subfolders)
         % Keep track of the number of runs they completed
         has_runs = [];
         for run = 1:4
-            search_pattern = sprintf('%s_%s_task-flightinitiationdistance%d_events.tsv', subject_folder, ses{1}, run);
+            if test
+                search_pattern = sprintf('%s_%s_task-escape%d_events.tsv', subject_folder, ses{1}, run);
+            else
+                search_pattern = sprintf('%s_%s_task-flightinitiationdistance%d_events.tsv', subject_folder, ses{1}, run);
+            end
             tsv_file = dir(fullfile(func_folder, search_pattern));
             % Check to see if there is a file for this run
             if ~isempty(tsv_file)
@@ -75,15 +93,28 @@ for i = 1:length(subfolders)
         trial_list = reshape(cell2mat(arrayfun(@(r) (r-1)*trials_per_run : r*trials_per_run - 1, has_runs(:)', 'UniformOutput', false)), 1, []);
 
         for trial = 0:num_trials-1
+            if test && trial == 118
+                disp("Stop here for debugging");
+            end
+
             game_trial = trial_list(trial+1); % Note that this for loop will always go from 0 to the number of trials-1, but someone may complete only the last two blocks so their game_number will go from 61 to 120 instead of 0 to 59.
             trial_rows = tsv_data_full(tsv_data_full.trial == game_trial,:);
             
             % flight initiation
+            % Sometimes the subject does not press
+            % anything, so there is no event code 10. Also, sometimes
+            % there is an event code 10, but the result column says 'NO
+            % FLEE'. In either case, we want to record the FID as "NO
+            % FLEE".
             flight_initiation_idx = find(trial_rows.event_code == 10);
             if ~isempty(flight_initiation_idx)
-                FID = 80 - trial_rows(flight_initiation_idx - 1,:).result;
+                if strcmp(trial_rows(flight_initiation_idx,:).response{:},'NO FLEE')
+                    FID = nan;
+                else
+                    FID = 80 - trial_rows(flight_initiation_idx - 1,:).result;
+                end
             else
-                FID = 0;
+                FID = nan;
             end
             
             % attack distance
@@ -139,5 +170,6 @@ all_data(contains(all_data.subject, 'MI999'), :) = []; % Now this should work
 % save results
 % writetable(all_data, 'L:\rsmith\lab-members\cgoldman\ironside_FID\LIBR_FID_scripts_CMG\data\expanded_data_LIBR_5-28-25.csv');
 % writetable(all_data, 'L:\rsmith\lab-members\cgoldman\ironside_FID\LIBR_FID_scripts_CMG\task_data\carter_processed_data_7-9-25.csv');
+writetable(all_data, 'L:\rsmith\lab-members\cgoldman\ironside_FID\LIBR_FID_scripts_CMG\data\expanded_data_LIBR_4-12-26.csv');
 
 end
