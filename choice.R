@@ -1,7 +1,7 @@
 # run after source("bayesian_utilities.R)
 library(ggplot2)
-library(mlogit) # note that an older version of mlogit must be used; remotes::install_version("mlogit", version = "1.0-3.1")
-
+library(mlogit) # note that an older version of mlogit must be used; remotes::install_version("mlogit", version = "1.0-3.1") 
+# Might need to first install statmod: install.packages("statmod", type = "binary")
 
 # choices.data.DT <- merge(data.DT[FID>0], bayesian.utility.DT)
 

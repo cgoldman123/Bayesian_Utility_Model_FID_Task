@@ -1,7 +1,7 @@
 # Note: Make plot window big before running; helps with preventing R Studio from Crashing
 rm(list = ls())
 setwd("L://rsmith//lab-members//cgoldman//ironside_FID//LIBR_FID_scripts_CMG")
-
+setwd("~/LIBR/Bayesian_Utility_Model_FID_Task")
 source("analysis.R")
 source("reward_function.R")
 source("models.R")
@@ -21,7 +21,7 @@ merged_data$run <- (substr(merged_data$subject_id, 18, 20))
 
 
 # Save merged data file
-# write.csv(merged_data, paste0("L://rsmith/lab-members/cgoldman/ironside_FID/LIBR_FID_scripts_CMG/results/FID_merged_data",format(Sys.time(), "_%Y-%m-%d_%H_%M_%S"),".csv"))
+# write.csv(merged_data, paste0("./results/FID_merged_data",format(Sys.time(), "_%Y-%m-%d_%H_%M_%S"),".csv"))
 
 
 
