@@ -1,5 +1,24 @@
 # Modeling Choice under Risk
 
+## Project Overview
+
+This repository contains the data, model code, and analysis scripts for studying choice under risk in the FID task.
+
+- `results/` contains fitted parameter estimates, summary output, and model results from the analysis pipeline.
+- `task_data/` contains cleaned and processed task data, including trial-level and expanded task records used for modeling and behavioral analysis.
+- `redcap_data/` contains questionnaire and psychometric measures collected through REDCap.
+
+## Between-subject analyses
+
+The between-subject analyses relate individual differences in questionnaire measures to task behavior and model-derived parameters. These analyses typically:
+
+- merge processed task data with state and trait questionnaire scores,
+- fit mixed-effects models that account for repeated measurements across sessions and runs,
+- compare pain and reward outcomes across sessions, runs, and participant traits,
+- examine how fitted parameters and behavior vary across individuals.
+
+The `results/` folder stores the estimated parameters and summaries used for these comparisons, while `task_data/` provides the cleaned input data.
+
 ## Setup
 
 Each subject $i$ undergoes $n$ number of trials, in each of which he/she chooses FID from a finite set of options. By choosing a bigger FID the risk of being caught is lowered but the reward is also smaller; a smaller FID, more reward at the cost of higher risk. The utility (reward) is denoted by 
