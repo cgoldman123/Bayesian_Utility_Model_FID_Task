@@ -17,9 +17,9 @@ library(irr)
 library(car)
 library(tidyverse)
 
-
-task_data = read.csv("L:/rsmith/lab-members/cgoldman/ironside_FID/LIBR_FID_scripts_CMG/results/FID_merged_data_2025-07-10_08_54_18.csv")
-redcap_data = read.csv("L:/rsmith/lab-members/cgoldman/ironside_FID/LIBR_FID_scripts_CMG/redcap_data/TCAD_redcap_report_7-2-25.csv")
+# Read the FID task dataset and the REDCap questionnaire dataset.
+task_data = read.csv("./results/FID_merged_data_2026-04-12_19_18_07.csv")
+redcap_data = read.csv("./redcap_data/TCAD_redcap_report_7-2-25.csv")
 
 
 # Pivot the task data so each subject (id) has one row, with session-specific columns
